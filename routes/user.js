@@ -25,7 +25,7 @@ router.get("/", validateToken, testUserAPI);
 //@access Private: Needs Login
 router.post(
   "/add",
-  /* validateToken, */
+  validateToken,
   [
     body("name", "Enter a valid name").isLength({ min: 3 }),
     body("email", "Enter a Valid Email").isEmail(),

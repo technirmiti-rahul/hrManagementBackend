@@ -309,76 +309,6 @@ const deleteClient = async (req, res) => {
   }
 };
 
-//@desc Client Login with email and password
-//@route POST /api/v1/client/login/
-//@access PUBLIC
-const logIn = async (req, res) => {
-  const errors = validationResult(req);
-  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-
-  if (!errors.isEmpty()) {
-    logger.error(`${ip}: API /api/v1/client/login responnded with Error `);
-    return res.status(400).json({ errors: errors.array() });
-  }
-  const data = matchedData(req);
-
-  const email = data.email;
-  const password = data.password;
-
-  try {
-    const oldUser = await Client.findOne({ email })
-      .populate("department")
-      .populate("roleType")
-      .populate("team");
-
-    if (!oldUser) {
-      logger.error(
-        `${ip}: API /api/v1/client/login responnded with Client Not Found for the user: ${email}`
-      );
-      return res.status(404).json({ message: "User Not Found, Please Signup" });
-    }
-
-    if (!oldUser.active) {
-      logger.error(
-        `${ip}: API /api/v1/client/login responnded with Client Deleted for the user: ${email}`
-      );
-      return res.status(404).json({ message: "User Deleted" });
-    }
-
-    if (!oldUser.approved) {
-      logger.error(
-        `${ip}: API /api/v1/client/login responnded with user Disabled: ${email}`
-      );
-      return res.status(402).json({ status: 402, message: "User Disabled" });
-    }
-    const isPasswordCorrect = await bcrypt.compare(password, oldUser.password);
-
-    if (!isPasswordCorrect) {
-      logger.error(
-        `${ip}: API /api/v1/client/login responnded with Incorrect Password for the user: ${email}`
-      );
-      return res
-        .status(401)
-        .json({ status: 401, message: "Incorrect Password" });
-    }
-
-    const token = jwt.sign({ user: oldUser }, secret, {
-      expiresIn: "8hr",
-    });
-    //console.log(token);
-    logger.info(
-      `${ip}: API /api/v1/client/login responnded with Login Successfull for the user: ${email}`
-    );
-    return res
-      .status(200)
-      .json({ data: oldUser, token, message: "Login Successfull" });
-  } catch (error) {
-    logger.info(`${ip}: API /api/v1/client/login responnded with error`);
-    console.log(error);
-    return res.status(500).json({ message: "Something went wrong" });
-  }
-};
-
 //@desc Get current Logged in USer
 //@route POST /api/v1/client/getCurrent/
 //@access Private Needs Login
@@ -576,7 +506,7 @@ module.exports = {
   getClient,
   updateClient,
   deleteClient,
-  logIn,
+
   getCurrent,
   AppDisClient,
   changePass,

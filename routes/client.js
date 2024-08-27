@@ -8,7 +8,6 @@ const {
   getClient,
   updateClient,
   deleteClient,
-  logIn,
   getCurrent,
   AppDisClient,
   changePass,
@@ -59,18 +58,6 @@ router.post(
     body("user_id", "Select a valid Client id").notEmpty(),
   ],
   createClient
-);
-
-//@desc Client Login with email and password
-//@route POST /api/v1/client/login/
-//@access PUBLIC
-router.post(
-  "/login/",
-  [
-    body("email", "Enter a Valid Email").isEmail(),
-    body("password", "Password must have atlest 5 character").notEmpty(),
-  ],
-  logIn
 );
 
 //@desc Get current Logged in Client
