@@ -33,7 +33,7 @@ const testUserAPI = async (req, res) => {
 const createUser = async (req, res) => {
   const errors = validationResult(req);
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-  const user = req.user;
+  const user = req.user || "user";
 
   if (!errors.isEmpty()) {
     logger.error(
