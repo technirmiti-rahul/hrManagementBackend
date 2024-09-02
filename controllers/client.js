@@ -61,35 +61,114 @@ const createClient = async (req, res) => {
       );
       return res.status(400).json({ message: "User already registered!" });
     }
+    const newUser = await User.create({
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      whatsapp_no: data.whatsapp_no,
+      city: data.city,
+      address: data.address,
+      country: data.country,
+      state: data.state,
+      pin_code: data.pin_code,
+      team: data.team,
+      roleType: data.roleType,
+      department: data.department,
+    });
+    data.user_id = newUser._id;
 
     const newClient = await Client.create({
       user_id: data.user_id,
       name: data.name,
       email: data.email,
-      address: data.address,
-      pan_card: data.pan_card,
-      adhar_card: data.adhar_card,
-      gst_no: data.gst_no,
-      cin_no: data.cin_no,
       whatsapp_no: data.whatsapp_no,
-      industry_type: data.industry_type,
-      employee_count_range: data.employee_count_range,
-      incorporation_type: data.incorporation_type,
-      contact_person: {
-        name: data.contact_person.name,
-        email: data.contact_person.email,
-        contact_no: data.contact_person.contact_no,
-        designation: data.contact_person.designation,
-      },
+      city: data.city,
+      address: data.address,
+      country: data.country,
+      state: data.state,
+      pin_code: data.pin_code,
     });
 
+    console.log("newClient", newClient);
+
     logger.info(
-      `${ip}: API /api/v1/client/add | User: ${newClient.name} | Responded with Success`
+      `${ip}: API /api/v1/client/add | User: ${newUser.name} | Responded with Success`
     );
-    return res.status(201).json(newClient);
+    return res.status(201).json(newUser);
   } catch (err) {
     logger.error(
       `${ip}: API /api/v1/client/add | User: ${
+        user?.name || "Guest"
+      } | Responded with Error`
+    );
+    return res.status(500).json({ error: "Error", message: err.message });
+  }
+};
+
+//@desc Add Client Details
+//@route PUT /api/v1/client/add/details/:id
+//@access Private: Needs Login
+const AddClientDetails = async (req, res) => {
+  const user = req.user;
+  const id = req.params.id;
+  const data = matchedData(req);
+
+  const errors = validationResult(req);
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+  if (!errors.isEmpty()) {
+    logger.error(
+      `${ip}: API /api/v1/client/add/details/:${id} | User: ${
+        user?.name || "Guest"
+      } | Responded with Validation Error`
+    );
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  if (!user) {
+    logger.error(
+      `${ip}: API /api/v1/client/add/details/:${id} | User: ${user.name} | responnded with Client is not Autherized `
+    );
+    return res.status(401).send({ message: "User is not Autherized" });
+  }
+
+  try {
+    const client = await Client.findOneAndUpdate(
+      { user_id: id },
+      {
+        pan_card: data.pan_card,
+        adhar_card: data.adhar_card,
+        gst_no: data.gst_no,
+        cin_no: data.cin_no,
+        industry_type: data.industry_type,
+        employee_count_range: data.employee_count_range,
+        incorporation_type: data.incorporation_type,
+        contact_person: {
+          name: data.contact_person.name,
+          email: data.contact_person.email,
+          contact_no: data.contact_person.contact_no,
+          designation: data.contact_person.designation,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    if (!client) {
+      logger.error(
+        `${ip}: API /api/v1/client/add/details/:${id} | User: ${user.name} | Responded with Client Not Found `
+      );
+      return res.status(404).json({ message: "Client Not Found" });
+    }
+
+    logger.info(
+      `${ip}: API /api/v1/client/add/details/:${id} | User: ${user.name} | Responded with Success`
+    );
+    return res.status(200).json(client);
+  } catch (err) {
+    logger.error(
+      `${ip}: API /api/v1/client/add/details/:${id} | User: ${
         user?.name || "Guest"
       } | Responded with Error`
     );
@@ -230,7 +309,7 @@ const updateClient = async (req, res) => {
         );
         return res
           .status(200)
-          .json({ data: result, message: "User Updated Successfully" });
+          .json({ data: result, message: "Client Updated Successfully" });
       } else {
         logger.info(
           `${ip}: API /api/v1/client/update/:${id} | User: ${loggedin_user.name} | responnded with Client Not Found `
@@ -613,6 +692,7 @@ const updateDocument = async (req, res) => {
 module.exports = {
   testClientAPI,
   createClient,
+  AddClientDetails,
   getClients,
   getClient,
   updateClient,

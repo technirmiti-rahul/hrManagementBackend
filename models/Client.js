@@ -9,19 +9,15 @@ const { Schema } = mongoose;
 const ContactPersonSchema = new Schema({
   name: {
     type: String,
-    required: true,
   },
   email: {
     type: String,
-    required: true,
   },
   contact_no: {
     type: String,
-    required: true,
   },
   designation: {
     type: String,
-    required: true,
   },
 });
 
@@ -40,42 +36,56 @@ const ClientSchema = new Schema({
     required: true,
     unique: true,
   },
-
-  pan_card: {
-    type: String,
-    required: true,
-  },
-  adhar_card: {
-    type: String,
-    required: true,
-  },
-  gst_no: {
-    type: String,
-    required: true,
-  },
-  cin_no: {
-    type: String,
-    required: true,
-  },
   whatsapp_no: {
     type: String,
     required: true,
   },
-  industry_type: {
+
+  address: {
     type: String,
     required: true,
+  },
+  pin_code: {
+    type: String,
+    required: true,
+  },
+  city: {
+    type: String,
+    required: true,
+  },
+  state: {
+    type: String,
+    required: true,
+  },
+  country: {
+    type: String,
+    required: true,
+  },
+
+  pan_card: {
+    type: String,
+  },
+  adhar_card: {
+    type: String,
+  },
+  gst_no: {
+    type: String,
+  },
+  cin_no: {
+    type: String,
+  },
+
+  industry_type: {
+    type: String,
   },
   employee_count_range: {
     type: String,
-    required: true,
   },
   contact_person: {
     type: ContactPersonSchema,
-    required: true,
   },
   incorporation_type: {
     type: String,
-    required: true,
   },
 
   /* /////////////Proofs//////////////// */
