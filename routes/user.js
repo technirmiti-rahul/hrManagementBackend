@@ -33,6 +33,11 @@ router.post(
     body("password", "Password must have atlest 5 character").isLength({
       min: 5,
     }),
+    body("city", "Enter a Valid city"),
+    body("state", "Enter a Valid state"),
+    body("country", "Enter a Valid country"),
+    body("address", "Enter a Valid address"),
+    body("pin_code", "Enter a Valid pin_code").isNumeric(),
     body("roleType", "Select a valid role id").notEmpty(),
     body("team", "Select a valid team id").notEmpty(),
     body("department", "Select a valid department id").notEmpty(),

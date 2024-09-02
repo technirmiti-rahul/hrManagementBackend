@@ -40,10 +40,7 @@ const ClientSchema = new Schema({
     required: true,
     unique: true,
   },
-  address: {
-    type: String,
-    required: true,
-  },
+
   pan_card: {
     type: String,
     required: true,
@@ -80,6 +77,37 @@ const ClientSchema = new Schema({
     type: String,
     required: true,
   },
+
+  /* /////////////Proofs//////////////// */
+  adhar_proof: {
+    type: Boolean,
+    default: false,
+  },
+  adhar_proof_url: {
+    type: String,
+  },
+  pan_proof: {
+    type: Boolean,
+    default: false,
+  },
+  pan_proof_url: {
+    type: String,
+  },
+  gst_proof: {
+    type: Boolean,
+    default: false,
+  },
+  gst_proof_url: {
+    type: String,
+  },
+  cin_proof: {
+    type: Boolean,
+    default: false,
+  },
+  cin_proof_url: {
+    type: String,
+  },
+
   createDate: {
     type: Date,
     default: Date.now,

@@ -499,6 +499,117 @@ const changePass = async (req, res) => {
   }
 };
 
+//@desc Update Client with id
+//@route PUT /api/v1/client/update/document/:id
+//@access Private: Needs Login
+const updateDocument = async (req, res) => {
+  const loggedin_user = req.user;
+  const { id } = req.params;
+
+  const data = matchedData(req);
+  console.log("data: ", data, id);
+
+  const errors = validationResult(req);
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+  if (!errors.isEmpty()) {
+    logger.error(
+      `${ip}: API /api/v1/client/update/:${id} | User: ${loggedin_user.name} | responnded with Validation Error `
+    );
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  if (loggedin_user) {
+    try {
+      const oldUser = await Client.findOne({ user_id: id });
+      console.log("oldUser: ", oldUser);
+      if (oldUser) {
+        let client = "";
+
+        if (data.document_type == "adhar") {
+          const res = await Client.findOneAndUpdate(
+            { user_id: id },
+            {
+              adhar_proof_url: data.doc_url,
+              adhar_proof: true,
+            },
+            {
+              new: true,
+            }
+          );
+          client = res;
+        }
+
+        if (data.document_type == "pan") {
+          const res = await Client.findOneAndUpdate(
+            { user_id: id },
+            {
+              pan_proof_url: data.doc_url,
+              pan_proof: true,
+            },
+            {
+              new: true,
+            }
+          );
+          client = res;
+        }
+
+        if (data.document_type == "gst") {
+          const res = await Client.findOneAndUpdate(
+            { user_id: id },
+            {
+              gst_proof_url: data.doc_url,
+              gst_proof: true,
+            },
+            {
+              new: true,
+            }
+          );
+          client = res;
+        }
+
+        if (data.document_type == "cin") {
+          const res = await Client.findOneAndUpdate(
+            { user_id: id },
+            {
+              cin_proof_url: data.doc_url,
+              cin_proof: true,
+            },
+            {
+              new: true,
+            }
+          );
+          client = res;
+        }
+
+        logger.info(
+          `${ip}: API /api/v1/client/update/:${id} | User: ${loggedin_user.name} | responnded with Success `
+        );
+        return res
+          .status(200)
+          .json({ data: client, message: "User Updated Successfully" });
+      } else {
+        logger.info(
+          `${ip}: API /api/v1/client/update/:${id} | User: ${loggedin_user.name} | responnded with Client Not Found `
+        );
+        return res.status(200).json({ message: "User Not Found" });
+      }
+    } catch (error) {
+      logger.error(
+        `${ip}: API /api/v1/client/update/:${id} | User: ${loggedin_user.name} | responnded with Error `
+      );
+      return res
+        .status(500)
+        .json({ data: error, message: "Something went wrong" });
+    }
+  } else {
+    logger.error(
+      `${ip}: API /api/v1/client/update/:${id} | User: ${loggedin_user.name} | responnded with Client is not Autherized `
+    );
+    return res.status(401).send({ message: "User is not Autherized" });
+  }
+};
+
 module.exports = {
   testClientAPI,
   createClient,
@@ -506,6 +617,7 @@ module.exports = {
   getClient,
   updateClient,
   deleteClient,
+  updateDocument,
 
   getCurrent,
   AppDisClient,

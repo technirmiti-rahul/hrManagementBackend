@@ -10,6 +10,7 @@ const {
   deleteClient,
   getCurrent,
   AppDisClient,
+  updateDocument,
   changePass,
 } = require("../controllers/client");
 const validateToken = require("../middleware/validateTokenHandler");
@@ -29,10 +30,7 @@ router.post(
     body("name", "Enter a valid name").isLength({ min: 3 }),
     body("email", "Enter a Valid Email").isEmail(),
     body("whatsapp_no", "Enter a Valid Whatsapp Number").notEmpty().isNumeric(),
-    body("password", "Password must have at least 5 characters").isLength({
-      min: 5,
-    }),
-    body("address", "Enter a valid address").notEmpty(),
+
     body("pan_card", "Enter a valid PAN card number").notEmpty(),
     body("adhar_card", "Enter a valid Aadhar card number").notEmpty(),
     body("gst_no", "Enter a valid GST number").notEmpty(),
@@ -85,7 +83,6 @@ router.put(
 
     body("whatsapp_no", "Enter a Valid Whatsapp Number").notEmpty().isNumeric(),
 
-    body("address", "Enter a valid address").notEmpty(),
     body("pan_card", "Enter a valid PAN card number").notEmpty(),
     body("adhar_card", "Enter a valid Aadhar card number").notEmpty(),
     body("gst_no", "Enter a valid GST number").notEmpty(),
@@ -115,6 +112,19 @@ router.put(
   ],
   validateToken,
   updateClient
+);
+
+//@desc Update Client with id
+//@route PUT /api/v1/client/update/document/:id
+//@access Private: Needs Login
+router.put(
+  "/update/document/:id",
+  [
+    body("document_type", "ducument_type is required").notEmpty(),
+    body("doc_url", "doc_url is required").notEmpty(),
+  ],
+  validateToken,
+  updateDocument
 );
 
 //@desc Change password of Client with id

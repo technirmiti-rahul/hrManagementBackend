@@ -63,6 +63,11 @@ const createUser = async (req, res) => {
       roleType: data.roleType,
       team: data.team,
       department: data.department,
+      city: data.city,
+      state: data.state,
+      country: data.country,
+      address: data.address,
+      pin_code: data.pin_code,
     })
       .then((user) => {
         logger.info(
