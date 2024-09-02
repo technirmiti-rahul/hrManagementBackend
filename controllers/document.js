@@ -49,7 +49,7 @@ const testDocumentAPI = async (req, res) => {
 //@desc Upload document
 //@route POST /api/v1/document/upload/
 //@access Private: Needs Login
-//@access Private: Needs Login
+
 const uploadDocument = async (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   const user = req.user;
@@ -64,21 +64,19 @@ const uploadDocument = async (req, res) => {
   try {
     const file = req.file;
 
-    // Check if file exists and has the expected properties
     if (!file || !file.originalname || !file.buffer) {
       throw new Error("File upload failed");
     }
 
     const uploadParams = {
-      Bucket: "digitalhrs3bucket",
-      Key: `documents/${file.originalname}`, // Include the folder name in the Key property
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: `documents/${file.originalname}`,
       Body: file.buffer,
-      ContentType: "application/pdf", // Set the Content-Type header to application/pdf
+      ContentType: "application/pdf",
     };
 
     const data = await s3.upload(uploadParams).promise();
 
-    // Remove the Content-Disposition header from the response
     res.setHeader("Content-Disposition", "");
 
     logger.info(
