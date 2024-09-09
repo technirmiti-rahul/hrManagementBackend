@@ -115,6 +115,85 @@ const createClient = async (req, res) => {
   }
 };
 
+//@desc Update Newly Created Client
+//@route POST /api/v1/client/update/created
+//@access Private: Needs Login
+const updateCreated = async (req, res) => {
+  const errors = validationResult(req);
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const user = req.user;
+  const data = matchedData(req);
+  console.log("data", data);
+
+  if (!errors.isEmpty()) {
+    logger.error(
+      `${ip}: API /api/v1/client/add | User: ${
+        user?.name || "Guest"
+      } | Responded with Error`
+    );
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  if (!user) {
+    logger.error(
+      `${ip}: API /api/v1/user/add | User: ${user.name} | responnded with Client is not Autherized `
+    );
+    return res.status(401).send({ message: "User is not Autherized" });
+  }
+
+  try {
+    const newUser = await User.findOneAndUpdate(
+      { _id: data.user_id },
+      {
+        name: data.name,
+
+        password: data.password,
+        whatsapp_no: data.whatsapp_no,
+        city: data.city,
+        address: data.address,
+        country: data.country,
+        state: data.state,
+        pin_code: data.pin_code,
+        team: data.team,
+        roleType: data.roleType,
+        department: data.department,
+      }
+    );
+
+    const newClient = await Client.findOneAndUpdate(
+      { user_id: data.user_id },
+      {
+        name: data.name,
+
+        whatsapp_no: data.whatsapp_no,
+        city: data.city,
+        address: data.address,
+        country: data.country,
+        state: data.state,
+        pin_code: data.pin_code,
+      },
+      {
+        new: true,
+      }
+    );
+
+    console.log("newClient", newClient);
+
+    logger.info(
+      `${ip}: API /api/v1/client/add | User: ${newUser.name} | Responded with Success`
+    );
+    return res.status(201).json(newUser);
+  } catch (err) {
+    logger.error(
+      `${ip}: API /api/v1/client/add | User: ${
+        user?.name || "Guest"
+      } | Responded with Error`
+    );
+    console.log(err);
+    return res.status(500).json({ error: "Error", message: err.message });
+  }
+};
+
 //@desc Add Client Details
 //@route PUT /api/v1/client/add/details/:id
 //@access Private: Needs Login
@@ -269,7 +348,7 @@ const getClient = async (req, res) => {
 const updateClient = async (req, res) => {
   const loggedin_user = req.user;
   const { id } = req.params;
-  const { name, whatsapp_no, roleType, department, team } = req.body;
+
   const data = matchedData(req);
   console.log("data: ", data);
 
@@ -313,6 +392,19 @@ const updateClient = async (req, res) => {
           },
           {
             new: true,
+          }
+        );
+
+        const user = await User.findOneAndUpdate(
+          { _id: data.user_id },
+          {
+            name: data.name,
+            whatsapp_no: data.whatsapp_no,
+            city: data.city,
+            address: data.address,
+            country: data.country,
+            state: data.state,
+            pin_code: data.pin_code,
           }
         );
 
@@ -708,6 +800,7 @@ const updateDocument = async (req, res) => {
 module.exports = {
   testClientAPI,
   createClient,
+  updateCreated,
   AddClientDetails,
   getClients,
   getClient,

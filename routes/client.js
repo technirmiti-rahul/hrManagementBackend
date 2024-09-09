@@ -4,6 +4,7 @@ const { body } = require("express-validator");
 const {
   testClientAPI,
   createClient,
+  updateCreated,
   AddClientDetails,
   getClients,
   getClient,
@@ -28,6 +29,7 @@ router.post(
   "/add",
   validateToken,
   [
+    body("user_id"),
     body("name", "Enter a valid name").isLength({ min: 3 }),
     body("email", "Enter a Valid Email").isEmail(),
     body("whatsapp_no", "Enter a Valid Whatsapp Number").notEmpty().isNumeric(),
@@ -68,6 +70,31 @@ router.post(
     ).notEmpty(), */
   ],
   createClient
+);
+
+//@desc Update Newly Created Client
+//@route POST /api/v1/client/update/created
+//@access Private: Needs Login
+router.post(
+  "/update/created",
+  validateToken,
+  [
+    body("user_id", "Enter a valid user id").notEmpty(),
+    body("name", "Enter a valid name").isLength({ min: 3 }),
+    body("email", "Enter a Valid Email").isEmail(),
+    body("whatsapp_no", "Enter a Valid Whatsapp Number").notEmpty().isNumeric(),
+    body("password", "Password must have atlest 5 character").notEmpty(),
+    body("city", "Enter a Valid city"),
+    body("state", "Enter a Valid state"),
+    body("country", "Enter a Valid country"),
+    body("address", "Enter a Valid address"),
+    body("pin_code", "Enter a Valid pin_code").isNumeric(),
+    body("roleType", "Select a valid role id").notEmpty(),
+    body("team", "Select a valid team id").notEmpty(),
+    body("department", "Select a valid department id").notEmpty(),
+  ],
+
+  updateCreated
 );
 
 //@desc Login Client
@@ -123,6 +150,7 @@ router.get("/get/:id", validateToken, getClient);
 router.put(
   "/update/:id",
   [
+    body("user_id", "Enter a valid user id").notEmpty(),
     body("name", "Enter a valid name").isLength({ min: 3 }),
 
     body("whatsapp_no", "Enter a Valid Whatsapp Number").notEmpty().isNumeric(),

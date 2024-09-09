@@ -4,6 +4,7 @@ const { validationResult, matchedData } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const logger = require("../config/logger.js");
+const Client = require("../models/Client");
 
 const secret = process.env.ACCESS_TOKEN_SECERT;
 
@@ -205,6 +206,22 @@ const updateUser = async (req, res) => {
           .populate("department")
           .populate("roleType")
           .populate("team");
+
+        if (result.roleType.name === "client") {
+          const client = await Client.findOneAndUpdate(
+            { user_id: id },
+            {
+              name: result.name,
+              whatsapp_no: result.whatsapp_no,
+              address: result.address,
+              city: result.city,
+              state: result.state,
+              country: result.country,
+              pincode: result.pincode,
+            }
+          );
+        }
+
         logger.info(
           `${ip}: API /api/v1/user/update/:${id} | User: ${loggedin_user.name} | responnded with Success `
         );
