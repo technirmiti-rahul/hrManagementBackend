@@ -66,13 +66,13 @@ const ClientSchema = new Schema({
     type: String,
   },
   adhar_card: {
-    type: String,
+    type: Number,
   },
   gst_no: {
-    type: String,
+    type: Number,
   },
   cin_no: {
-    type: String,
+    type: Number,
   },
 
   industry_type: {
@@ -96,11 +96,17 @@ const ClientSchema = new Schema({
   adhar_proof_url: {
     type: String,
   },
+  adhar_proof_url_id: {
+    type: String,
+  },
   pan_proof: {
     type: Boolean,
     default: false,
   },
   pan_proof_url: {
+    type: String,
+  },
+  pan_proof_url_id: {
     type: String,
   },
   gst_proof: {
@@ -110,6 +116,9 @@ const ClientSchema = new Schema({
   gst_proof_url: {
     type: String,
   },
+  gst_proof_url_id: {
+    type: String,
+  },
   cin_proof: {
     type: Boolean,
     default: false,
@@ -117,6 +126,10 @@ const ClientSchema = new Schema({
   cin_proof_url: {
     type: String,
   },
+  cin_proof_url_id: {
+    type: String,
+  },
+  /* /////////////Proofs//////////////// */
 
   createDate: {
     type: Date,

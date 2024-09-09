@@ -49,10 +49,12 @@ const testDocumentAPI = async (req, res) => {
 //@desc Upload document
 //@route POST /api/v1/document/upload/
 //@access Private: Needs Login
-
 const uploadDocument = async (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   const user = req.user;
+  const { document, id } = req.params;
+
+  console.log(document, id);
 
   if (!user) {
     logger.error(
@@ -70,7 +72,7 @@ const uploadDocument = async (req, res) => {
 
     const uploadParams = {
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `documents/${file.originalname}`,
+      Key: `documents/${document + id + file.originalname}`,
       Body: file.buffer,
       ContentType: "application/pdf",
     };
@@ -78,11 +80,14 @@ const uploadDocument = async (req, res) => {
     const data = await s3.upload(uploadParams).promise();
 
     res.setHeader("Content-Disposition", "");
+    console.log("data: ", data);
 
     logger.info(
       `${ip}: API /api/v1/document/upload | User:  ${user.name}| document uploaded successfully`
     );
-    return res.status(201).json({ location: data.Location });
+    return res
+      .status(201)
+      .json({ location: data, file_id: document + id + file.originalname });
   } catch (err) {
     logger.error(
       `${ip}: API /api/v1/document/upload | User: ${user.name} | error uploading document: ${err.message}`
@@ -91,7 +96,65 @@ const uploadDocument = async (req, res) => {
   }
 };
 
+// @description Upload document
+// @route POST /api/v1/document/upload/
+// @access Private: Needs Login
+
+const deleteDocument = async (req, res) => {
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const user = req.user;
+  const { filename, client_id, file_type } = req.params;
+  console.log(
+    "filename: ",
+    filename,
+    " client_id: ",
+    client_id,
+    " file_type: ",
+    file_type
+  );
+
+  const file_proof = file_type + "_proof";
+  const file_proof_url = file_type + "_proof_url";
+  const file_proof_url_id = file_type + "_proof_url_id";
+
+  const params = {
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Key: `documents/${filename}`,
+  };
+
+  try {
+    const deleted = await s3.deleteObject(params).promise();
+    console.log("deleted: ", deleted);
+    let client = "";
+    if (deleted) {
+      client = await Client.findOneAndUpdate(
+        { user_id: client_id },
+        {
+          [file_proof]: false,
+          [file_proof_url]: null,
+          [file_proof_url_id]: null,
+        },
+        { new: true }
+      );
+    }
+
+    logger.info(
+      `${ip}: API /api/v1/document/delete | User:  ${user.name}| document deleted successfully`
+    );
+    return res
+      .status(200)
+      .json({ result: client, message: "Document deleted successfully" });
+  } catch (err) {
+    console.log(err);
+    logger.error(
+      `${ip}: API /api/v1/document/delete | User: ${user.name} | error deleting document: ${err.message}`
+    );
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   testDocumentAPI,
   uploadDocument,
+  deleteDocument,
 };

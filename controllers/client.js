@@ -36,6 +36,7 @@ const createClient = async (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   const user = req.user;
   const data = matchedData(req);
+  console.log("data", data);
 
   if (!errors.isEmpty()) {
     logger.error(
@@ -59,8 +60,17 @@ const createClient = async (req, res) => {
       logger.error(
         `${ip}: API /api/v1/client/add | User: ${user.name} | Responded with Client already registered! for email: ${data.email}`
       );
-      return res.status(400).json({ message: "User already registered!" });
+      return res.status(409).json({ message: "User already registered!" });
     }
+
+    const existingClient = await Client.findOne({ email: data.email });
+    if (existingClient) {
+      logger.error(
+        `${ip}: API /api/v1/client/add | User: ${user.name} | Responded with Client already registered! for user: ${data.email}`
+      );
+      return res.status(409).json({ message: "Client already registered!" });
+    }
+
     const newUser = await User.create({
       name: data.name,
       email: data.email,
@@ -75,10 +85,9 @@ const createClient = async (req, res) => {
       roleType: data.roleType,
       department: data.department,
     });
-    data.user_id = newUser._id;
 
     const newClient = await Client.create({
-      user_id: data.user_id,
+      user_id: newUser._id,
       name: data.name,
       email: data.email,
       whatsapp_no: data.whatsapp_no,
@@ -101,6 +110,7 @@ const createClient = async (req, res) => {
         user?.name || "Guest"
       } | Responded with Error`
     );
+    console.log(err);
     return res.status(500).json({ error: "Error", message: err.message });
   }
 };
@@ -281,17 +291,19 @@ const updateClient = async (req, res) => {
           id,
           {
             name: data.name,
-            email: data.email,
+            whatsapp_no: data.whatsapp_no,
+            city: data.city,
             address: data.address,
+            country: data.country,
+            state: data.state,
+            pin_code: data.pin_code,
             pan_card: data.pan_card,
             adhar_card: data.adhar_card,
             gst_no: data.gst_no,
             cin_no: data.cin_no,
-            whatsapp_no: data.whatsapp_no,
             industry_type: data.industry_type,
             employee_count_range: data.employee_count_range,
             incorporation_type: data.incorporation_type,
-
             contact_person: {
               name: data.contact_person.name,
               email: data.contact_person.email,
@@ -609,8 +621,9 @@ const updateDocument = async (req, res) => {
           const res = await Client.findOneAndUpdate(
             { user_id: id },
             {
-              adhar_proof_url: data.doc_url,
+              adhar_proof_url: data.document_url,
               adhar_proof: true,
+              adhar_proof_url_id: data.document_url_id,
             },
             {
               new: true,
@@ -623,8 +636,9 @@ const updateDocument = async (req, res) => {
           const res = await Client.findOneAndUpdate(
             { user_id: id },
             {
-              pan_proof_url: data.doc_url,
+              pan_proof_url: data.document_url,
               pan_proof: true,
+              pan_proof_url_id: data.document_url_id,
             },
             {
               new: true,
@@ -637,8 +651,9 @@ const updateDocument = async (req, res) => {
           const res = await Client.findOneAndUpdate(
             { user_id: id },
             {
-              gst_proof_url: data.doc_url,
+              gst_proof_url: data.document_url,
               gst_proof: true,
+              gst_proof_url_id: data.document_url_id,
             },
             {
               new: true,
@@ -651,8 +666,9 @@ const updateDocument = async (req, res) => {
           const res = await Client.findOneAndUpdate(
             { user_id: id },
             {
-              cin_proof_url: data.doc_url,
+              cin_proof_url: data.document_url,
               cin_proof: true,
+              cin_proof_url_id: data.document_url_id,
             },
             {
               new: true,
