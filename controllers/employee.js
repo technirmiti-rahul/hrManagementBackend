@@ -286,11 +286,13 @@ const getClientEmployees = async (req, res) => {
     if (user) {
       let employees = await Employee.find({
         client_id: client_id,
+        active: true,
       });
 
       if (employees.length <= 0) {
         employees = await Employee.find({
           client_user_id: client_id,
+          active: true,
         });
       }
 
