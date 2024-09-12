@@ -509,7 +509,7 @@ const changePass = async (req, res) => {
         logger.info(
           `${ip}: API /api/v1/user/change/pass/:${id} | User: ${loggedin_user.name} | responnded with User Not Found `
         );
-        return res.status(200).json({ message: "User Not Found" });
+        return res.status(404).json({ message: "User Not Found" });
       }
     } else {
       logger.error(

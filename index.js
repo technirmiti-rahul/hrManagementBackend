@@ -46,6 +46,7 @@ app.use("/api/v1/role", require("./routes/role.js"));
 app.use("/api/v1/notification", require("./routes/notification.js"));
 app.use("/api/v1/client", require("./routes/client.js"));
 app.use("/api/v1/document", require("./routes/document.js"));
+app.use("/api/v1/employee", require("./routes/employee.js"));
 
 /* ///////////////////////////////////////////////--------//////////////////////////////////////////////////////////////////// */
 

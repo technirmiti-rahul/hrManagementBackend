@@ -308,9 +308,15 @@ const getClient = async (req, res) => {
   try {
     if (loggedin_user) {
       const { id } = req.params;
-      const client = await Client.find({
+      let client = await Client.find({
         _id: id,
       }).populate("contact_person");
+      if (client.length <= 0) {
+        console.log("finding by user_id");
+        client = await Client.find({
+          user_id: id,
+        }).populate("contact_person");
+      }
 
       if (client.length > 0) {
         logger.info(
