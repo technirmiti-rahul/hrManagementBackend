@@ -93,7 +93,7 @@ const createEmployee = async (req, res) => {
 
     const newEmployee = await Employee.create({
       user_id: newUser._id,
-      client_id: existingClient._id || data.client_id,
+      client_id: existingClient._id,
       client_user_id: data.client_user_id,
       name: data.name,
       email: data.email,
