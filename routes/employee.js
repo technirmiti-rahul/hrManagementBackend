@@ -25,7 +25,7 @@ router.get("/", validateToken, testEmployeeAPI);
 //@access Private: Needs Login
 router.post(
   "/add",
-  validateToken,
+
   [
     body("client_user_id", "Enter a valid client user id").notEmpty(),
     body("client_id"),
@@ -44,6 +44,7 @@ router.post(
     body("designation", "Enter a Valid designation").notEmpty(),
     body("date_of_joining", "Enter a Valid date_of_joining").isDate(),
   ],
+  validateToken,
   createEmployee
 );
 
@@ -52,7 +53,7 @@ router.post(
 //@access Private: Needs Login
 router.put(
   "/update/:id",
-  validateToken,
+
   [
     body("name", "Enter a valid name").isLength({ min: 3 }),
     body("email", "Enter a Valid Email").isEmail(),
@@ -64,6 +65,7 @@ router.put(
     body("pin_code", "Enter a Valid pin_code").isNumeric(),
     body("designation", "Enter a Valid designation").notEmpty(),
   ],
+  validateToken,
   updateEmployee
 );
 

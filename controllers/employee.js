@@ -72,6 +72,10 @@ const createEmployee = async (req, res) => {
       return res.status(409).json({ message: "Employee already registered!" });
     }
 
+    const existingClient = await Client.findOne({
+      user_id: data.client_user_id,
+    });
+
     const newUser = await User.create({
       name: data.name,
       email: data.email,
@@ -89,7 +93,7 @@ const createEmployee = async (req, res) => {
 
     const newEmployee = await Employee.create({
       user_id: newUser._id,
-      client_id: data.client_id || "",
+      client_id: data.client_id || existingClient._id,
       client_user_id: data.client_user_id,
       name: data.name,
       email: data.email,
