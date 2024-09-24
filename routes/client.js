@@ -42,32 +42,6 @@ router.post(
     body("roleType", "Select a valid role id").notEmpty(),
     body("team", "Select a valid team id").notEmpty(),
     body("department", "Select a valid department id").notEmpty(),
-    /*  body("pan_card", "Enter a valid pan card number").notEmpty(),
-    body("adhar_card", "Enter a valid adhar card number")
-      .notEmpty()
-      .isNumeric(),
-    body("gst_no", "Enter a valid gst number").notEmpty().isNumeric(),
-    body("cin_no", "Enter a valid cin number").notEmpty().isNumeric(),
-    body("industry_type", "Enter a valid industry type").notEmpty(),
-    body("incorporation_type", "Enter a valid incorporation type").notEmpty(),
-    body(
-      "employee_count_range",
-      "Enter a valid employee count range"
-    ).notEmpty(),
-    body("contact_person.name", "Enter a valid contact person name").notEmpty(),
-    body("contact_person.email", "Enter a valid contact person email")
-      .isEmail()
-      .notEmpty(),
-    body(
-      "contact_person.contact_no",
-      "Enter a valid contact person contact number"
-    )
-      .notEmpty()
-      .isNumeric(),
-    body(
-      "contact_person.designation",
-      "Enter a valid contact person designation"
-    ).notEmpty(), */
   ],
   createClient
 );

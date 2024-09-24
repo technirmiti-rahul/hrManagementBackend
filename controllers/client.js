@@ -813,7 +813,6 @@ module.exports = {
   updateClient,
   deleteClient,
   updateDocument,
-
   getCurrent,
   AppDisClient,
   changePass,
