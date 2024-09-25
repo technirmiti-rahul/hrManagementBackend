@@ -13,7 +13,7 @@ const AttendanceDataSchema = new Schema({
     type: String,
     required: true,
   },
-  absent: {
+  present: {
     type: Number,
     required: true,
   },
