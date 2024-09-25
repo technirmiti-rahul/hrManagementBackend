@@ -42,12 +42,28 @@ const addAttendance = async (req, res) => {
   }
 
   if (user) {
-    const oldAttendance = await Attendance.findOne({ user: user._id });
+    const oldAttendance = await Attendance.findOne({
+      client_user_id: req.params.id,
+      month_year: data.month_year,
+    });
     if (oldAttendance) {
-      logger.error(
-        `${ip}: API /api/v1/attendance/add/:id | User: ${user.name} | responnded with Attendance already Exists! for User: ${user.name} `
+      console.log("oldAttendance", oldAttendance);
+      oldAttendance.AttendanceData = data.employeeData;
+      oldAttendance.month_year = data.month_year;
+      await Attendance.findOneAndUpdate(
+        {
+          client_user_id: req.params.id,
+          month_year: data.month_year,
+        },
+        {
+          AttendanceData: data.employeeData,
+        },
+        { new: true }
       );
-      return res.status(400).json({ message: "Attendance already Exists!" });
+      logger.info(
+        `${ip}: API /api/v1/attendance/add/:id | User: ${user.name} | responnded with Success `
+      );
+      return res.status(201).json(oldAttendance);
     }
 
     await Attendance.create({
@@ -122,7 +138,7 @@ const getLatestAttendance = async (req, res) => {
     try {
       const attendance = await Attendance.findOne({
         client_user_id,
-      }).sort({ createDate: -1 });
+      }).sort({ month_year: -1, createDate: -1 });
       if (attendance) {
         logger.info(
           `${ip}: API /api/v1/attendance/get/latest/:client_user_id | User: ${user.name} | responnded with Success `
