@@ -91,21 +91,50 @@ const addAttendance = async (req, res) => {
   }
 };
 
+//@desc Get All Attendance by client_user_id
+//@route GET /api/v1/attendance/get/all/:client_user_id
+//@access Private: Needs Login
+const getAllAttendanceByClient = async (req, res) => {
+  const client_user_id = req.params.client_user_id;
+  const user = req.user;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+  if (user) {
+    const attendance = await Attendance.find({
+      client_user_id,
+    }).sort({ month_year: -1 });
+    if (attendance) {
+      logger.info(
+        `${ip}: API /api/v1/attendance/get/all/:client_user_id | User: ${user.name} | responnded with Success `
+      );
+      return res.status(200).json(attendance);
+    } else {
+      logger.error(
+        `${ip}: API /api/v1/attendance/get/all/:client_user_id | User: ${user.name} | responnded with Attendance Not Found `
+      );
+      return res.status(404).json({ message: "Attendance Not Found" });
+    }
+  } else {
+    logger.error(
+      `${ip}: API /api/v1/attendance/get/all/:client_user_id | User: ${user.name} | responnded with User is not Autherized `
+    );
+    return res.status(401).send({ message: "User is not Autherized" });
+  }
+};
 //@desc Get Attendance by  month_year
 //@route GET /api/v1/attendance/get/:id
 //@access Private: Needs Login
-const getAttendanceByMonthYear = async (req, res) => {
+const getAttendanceById = async (req, res) => {
   const data = matchedData(req);
   console.log("data", data);
-  const client_user_id = req.params.id;
+  const id = req.params.id;
   const month_year = data.month_year;
   const user = req.user;
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
 
   if (user) {
     const attendance = await Attendance.findOne({
-      client_user_id,
-      month_year,
+      _id: id,
     });
     if (attendance) {
       logger.info(
@@ -165,9 +194,121 @@ const getLatestAttendance = async (req, res) => {
   }
 };
 
+//@desc Edit AttendanceData by emp_id
+//@route PUT /api/v1/attendance/edit/:id/:attendance_id
+//@access Private: Needs Login
+const editAttendanceData = async (req, res) => {
+  const data = matchedData(req); // Extract validated and sanitized data
+  const { id, attendance_id } = req.params; // Extract params from request
+  const user = req.user;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+  if (user) {
+    try {
+      // Find the attendance document by its main _id
+      const attendance = await Attendance.findOne({
+        _id: id,
+      });
+
+      if (attendance) {
+        // Find the index of the specific AttendanceData item by attendance_id
+        const attendanceDataIndex = attendance.AttendanceData.findIndex(
+          (item) => item._id == attendance_id
+        );
+
+        // If the item exists in the array, proceed with the update
+        if (attendanceDataIndex >= 0) {
+          const attendanceDataItem =
+            attendance.AttendanceData[attendanceDataIndex];
+
+          // Only update the provided fields
+          if (data.name) attendanceDataItem.name = data.name;
+          if (data.present) attendanceDataItem.present = data.present;
+
+          // Save the updated document back to the database
+          await attendance.save();
+
+          logger.info(
+            `${ip}: API /api/v1/attendance/edit/:id | User: ${user.name} | responded with Success`
+          );
+          return res.status(200).json(attendance);
+        } else {
+          logger.error(
+            `${ip}: API /api/v1/attendance/edit/:id | User: ${user.name} | responded with Attendance Not Found`
+          );
+          return res.status(404).json({ message: "Attendance Not Found" });
+        }
+      } else {
+        logger.error(
+          `${ip}: API /api/v1/attendance/edit/:id | User: ${user.name} | responded with Attendance Not Found`
+        );
+        return res.status(404).json({ message: "Attendance Not Found" });
+      }
+    } catch (err) {
+      logger.error(
+        `${ip}: API /api/v1/attendance/edit/:id | User: ${user.name} | responded with Error: ${err.message}`
+      );
+      return res.status(500).json({ error: "Error", message: err.message });
+    }
+  } else {
+    logger.error(
+      `${ip}: API /api/v1/attendance/edit/:id | User: ${user.name} | responded with User is not Authorized`
+    );
+    return res.status(401).send({ message: "User is not Authorized" });
+  }
+};
+
+//@desc Add record in AttendanceData
+//@route POST /api/v1/attendance/add/record/:id
+//@access Private: Needs Login
+const addRecordInAttendanceData = async (req, res) => {
+  const data = matchedData(req);
+  const { id } = req.params;
+  const user = req.user;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+  if (user) {
+    try {
+      const attendance = await Attendance.findOne({
+        _id: id,
+      });
+      if (attendance) {
+        attendance.AttendanceData.push({
+          emp_id: data.emp_id,
+          name: data.name,
+          present: data.present,
+        });
+        await attendance.save();
+        logger.info(
+          `${ip}: API /api/v1/attendance/add/record/:id | User: ${user.name} | responnded with Success `
+        );
+        return res.status(200).json(attendance);
+      } else {
+        logger.error(
+          `${ip}: API /api/v1/attendance/add/record/:id | User: ${user.name} | responnded with Attendance Not Found `
+        );
+        return res.status(404).json({ message: "Attendance Not Found" });
+      }
+    } catch (err) {
+      logger.error(
+        `${ip}: API /api/v1/attendance/add/record/:id | User: ${user.name} | responnded with Error `
+      );
+      return res.status(500).json({ error: "Error", message: err.message });
+    }
+  } else {
+    logger.error(
+      `${ip}: API /api/v1/attendance/add/record/:id | User: ${user.name} | responnded with User is not Autherized `
+    );
+    return res.status(401).send({ message: "User is not Autherized" });
+  }
+};
+
 module.exports = {
   testAttendanceAPI,
   addAttendance,
-  getAttendanceByMonthYear,
+  getAttendanceById,
   getLatestAttendance,
+  editAttendanceData,
+  addRecordInAttendanceData,
+  getAllAttendanceByClient,
 };
