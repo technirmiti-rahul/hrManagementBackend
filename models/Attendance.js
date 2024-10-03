@@ -6,7 +6,8 @@ const { Schema } = mongoose;
 
 const AttendanceDataSchema = new Schema({
   emp_id: {
-    type: String,
+    type: Schema.Types.ObjectId,
+    ref: "Employee",
     required: true,
   },
   name: {
@@ -28,7 +29,7 @@ const AttendanceSchema = new Schema({
   AttendanceData: [AttendanceDataSchema],
 
   month_year: {
-    type: String,
+    type: Date,
     required: true,
   },
 

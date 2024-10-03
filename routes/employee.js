@@ -4,6 +4,7 @@ const { body } = require("express-validator");
 const {
   testEmployeeAPI,
   createEmployee,
+  createEmployeesFromExcel,
   updateEmployee,
   deleteEmployee,
   getClientEmployees,
@@ -48,6 +49,21 @@ router.post(
   createEmployee
 );
 
+//@desc Create New Employee
+//@route POST /api/v1/employee/add/employees/excel
+//@access Private: Needs Login
+router.post(
+  "/add/employees/excel",
+
+  [
+    body("client_user_id", "Enter a valid client user id").notEmpty(),
+    body("client_id"),
+    body("employeeData", "Enter a valid employeeData"),
+  ],
+  validateToken,
+  createEmployeesFromExcel
+);
+
 //@desc Update Employee
 //@route PUT /api/v1/employee/update/:id
 //@access Private: Needs Login
@@ -72,7 +88,7 @@ router.put(
 //@desc Get all Employees
 //@route GET /api/v1/employee/client_id
 //@access Private: Needs Login
-router.get("/:client_id", validateToken, getClientEmployees);
+router.get("/get/employees/:client_id", validateToken, getClientEmployees);
 
 //@desc Get Employee with id
 //@route GET /api/v1/employee/get/:id

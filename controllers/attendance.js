@@ -258,6 +258,110 @@ const editAttendanceData = async (req, res) => {
   }
 };
 
+//@desc Get AttendanceData by attendanceId and empId
+//@route GET /api/v1/attendance/get/employee/:attendance_id/:emp_id
+//@access Private: Needs Login
+const getEmployeeAttendance = async (req, res) => {
+  const { attendance_id, emp_id } = req.params;
+  const user = req.user;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+  if (user) {
+    try {
+      const attendance = await Attendance.findOne({
+        _id: attendance_id,
+      });
+
+      if (attendance) {
+        const attendanceDataItem = attendance.AttendanceData.find(
+          (item) => item.emp_id == emp_id
+        );
+
+        if (attendanceDataItem) {
+          logger.info(
+            `${ip}: API /api/v1/attendance/get/employee/:attendance_id/:emp_id | User: ${user.name} | responded with Success`
+          );
+          return res.status(200).json(attendanceDataItem);
+        } else {
+          logger.error(
+            `${ip}: API /api/v1/attendance/get/employee/:attendance_id/:emp_id | User: ${user.name} | responded with Employee Not Found`
+          );
+          return res.status(404).json({ message: "Employee Not Found" });
+        }
+      } else {
+        logger.error(
+          `${ip}: API /api/v1/attendance/get/employee/:attendance_id/:emp_id | User: ${user.name} | responded with Attendance Not Found`
+        );
+        return res.status(404).json({ message: "Attendance Not Found" });
+      }
+    } catch (err) {
+      logger.error(
+        `${ip}: API /api/v1/attendance/get/employee/:attendance_id/:emp_id | User: ${user.name} | responded with Error: ${err.message}`
+      );
+      return res.status(500).json({ error: "Error", message: err.message });
+    }
+  } else {
+    logger.error(
+      `${ip}: API /api/v1/attendance/get/employee/:attendance_id/:emp_id | User: ${user.name} | responded with User is not Authorized`
+    );
+    return res.status(401).send({ message: "User is not Authorized" });
+  }
+};
+
+//@desc Get AttendanceData by from month_year to to month_year and emp_id
+//@route GET /api/v1/attendance/get/from/to/:id/:emp_id
+//@access Private: Needs Login
+const getAttendaceFromTo = async (req, res) => {
+  const { id, emp_id } = req.params; // Extract id and emp_id from params
+  const data = matchedData(req); // Get the validated input data (from, to)
+  const user = req.user;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+  if (user) {
+    console.log("Client User ID: ", id);
+    console.log("Employee ID: ", emp_id);
+    console.log("Data: ", data);
+
+    try {
+      // Query the Attendance collection
+      const attendance = await Attendance.find(
+        {
+          client_user_id: id, // Match the client_user_id
+          month_year: { $gte: data.from, $lte: data.to }, // Filter by date range
+          AttendanceData: {
+            $elemMatch: { emp_id: emp_id }, // Match only the specific emp_id in AttendanceData
+          },
+        },
+        {
+          "AttendanceData.$": 1, // Only return the matched element in AttendanceData array
+        }
+      ).sort({ month_year: 1 });
+
+      if (attendance && attendance.length > 0) {
+        logger.info(
+          `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with Success`
+        );
+        return res.status(200).json(attendance);
+      } else {
+        logger.error(
+          `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with Attendance Not Found`
+        );
+        return res.status(404).json({ message: "Attendance Not Found" });
+      }
+    } catch (err) {
+      logger.error(
+        `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with Error: ${err.message}`
+      );
+      return res.status(500).json({ error: "Error", message: err.message });
+    }
+  } else {
+    logger.error(
+      `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with User is not Authorized`
+    );
+    return res.status(401).send({ message: "User is not Authorized" });
+  }
+};
+
 //@desc Add record in AttendanceData
 //@route POST /api/v1/attendance/add/record/:id
 //@access Private: Needs Login
@@ -310,5 +414,7 @@ module.exports = {
   getLatestAttendance,
   editAttendanceData,
   addRecordInAttendanceData,
+  getEmployeeAttendance,
   getAllAttendanceByClient,
+  getAttendaceFromTo,
 };

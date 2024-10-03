@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+
 const dotenv = require("dotenv").config();
 const { validationResult, matchedData } = require("express-validator");
 const bcrypt = require("bcryptjs");
@@ -8,7 +9,7 @@ const Employee = require("../models/Employee");
 const logger = require("../config/logger.js");
 
 const secret = process.env.ACCESS_TOKEN_SECERT;
-
+const defaultPassword = process.env.DEFAULT_PASSWORD;
 //@desc Test Employee API
 //@route GET /api/v1/employee
 //@access Private: Needs Login
@@ -79,7 +80,7 @@ const createEmployee = async (req, res) => {
     const newUser = await User.create({
       name: data.name,
       email: data.email,
-      password: data.password,
+      password: data.password || "111111",
       whatsapp_no: data.whatsapp_no,
       city: data.city,
       address: data.address,
@@ -123,6 +124,121 @@ const createEmployee = async (req, res) => {
     console.log(err);
     return res.status(500).json({ error: "Error", message: err.message });
   }
+};
+
+//@desc Create New Employee
+//@route POST /api/v1/employee/add
+//@access Private: Needs Login
+const createEmployeesFromExcel = async (req, res) => {
+  const errors = validationResult(req);
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const user = req.user;
+  const data = matchedData(req);
+  console.log("data", data);
+
+  if (!errors.isEmpty()) {
+    logger.error(
+      `${ip}: API /api/v1/employee/add | User: ${
+        user?.name || "Guest"
+      } | Responded with Error`
+    );
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  if (!user) {
+    logger.error(
+      `${ip}: API /api/v1/user/add | User: ${user.name} | responnded with Employee is not Autherized `
+    );
+    return res.status(401).send({ message: "User is not Autherized" });
+  }
+
+  let existingUsers = [];
+  let newUsers = [];
+  let Errors = [];
+  for (let i in data.employeeData) {
+    const existingUser = await Employee.findOne({
+      email: data.employeeData[i].email,
+    });
+    if (existingUser) {
+      logger.error(
+        `${ip}: API /api/v1/employee/add | User: ${user.name} | Responded with Employee already registered! for email: ${data.email}`
+      );
+      existingUsers.push(data.employeeData[i]);
+    } else {
+      try {
+        const existingEmployee = await Employee.findOne({ email: data.email });
+        if (existingEmployee) {
+          logger.error(
+            `${ip}: API /api/v1/employee/add | User: ${user.name} | Responded with Employee already registered! for user: ${data.email}`
+          );
+          return res
+            .status(409)
+            .json({ message: "Employee already registered!" });
+        }
+
+        const existingClient = await Client.findOne({
+          user_id: data.client_user_id,
+        });
+
+        const salt = await bcrypt.genSalt(10);
+        let securedPass = "";
+        if (data.employeeData[i].password) {
+          securedPass = await bcrypt.hash(data.password, salt);
+        } else {
+          securedPass = await bcrypt.hash("111111", salt);
+        }
+
+        const newUser = await User.create({
+          name: data.employeeData[i].name,
+          email: data.employeeData[i].email,
+          password: securedPass,
+          whatsapp_no: data.employeeData[i].whatsapp_no,
+          city: data.employeeData[i].city,
+          address: data.employeeData[i].address,
+          country: data.employeeData[i].country,
+          state: data.employeeData[i].state,
+          pin_code: data.employeeData[i].pin_code,
+          team: data.employeeData[i].team,
+          roleType: data.employeeData[i].roleType,
+          department: data.employeeData[i].department,
+        });
+
+        const newEmployee = await Employee.create({
+          user_id: newUser._id,
+          client_id: existingClient._id || data.client_id,
+          client_user_id: data.client_user_id,
+          name: data.employeeData[i].name,
+          email: data.employeeData[i].email,
+          whatsapp_no: data.employeeData[i].whatsapp_no,
+          city: data.employeeData[i].city,
+          designation: data.employeeData[i].designation,
+
+          date_of_joining: data.employeeData[i].date_of_joining,
+          address: data.employeeData[i].address,
+          country: data.employeeData[i].country,
+          state: data.employeeData[i].state,
+          pin_code: data.employeeData[i].pin_code,
+        });
+
+        console.log("newEmployee", newEmployee);
+
+        logger.info(
+          `${ip}: API /api/v1/employee/add | User: ${newUser.name} | Responded with Success`
+        );
+        newUsers.push(newEmployee);
+      } catch (err) {
+        logger.error(
+          `${ip}: API /api/v1/employee/add | User: ${
+            user?.name || "Guest"
+          } | Responded with Error`
+        );
+        console.log(err);
+        Errors.push(err.message);
+      }
+    }
+  }
+
+  return res.status(201).json({ existingUsers, newUsers, Errors });
 };
 
 //@desc Update Newly Created Employee
@@ -791,6 +907,7 @@ const updateDocument = async (req, res) => {
 module.exports = {
   testEmployeeAPI,
   createEmployee,
+  createEmployeesFromExcel,
 
   getClientEmployees,
   getEmployee,

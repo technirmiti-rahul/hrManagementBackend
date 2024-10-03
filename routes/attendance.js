@@ -9,6 +9,8 @@ const {
   getLatestAttendance,
   editAttendanceData,
   addRecordInAttendanceData,
+  getEmployeeAttendance,
+  getAttendaceFromTo,
 } = require("../controllers/attendance");
 const validateToken = require("../middleware/validateTokenHandler");
 
@@ -47,6 +49,27 @@ router.get(
   validateToken,
 
   getAttendanceById
+);
+
+//@desc Get AttendanceData by from month_year to to month_year
+//@route GET /api/v1/attendance/get/from/to/:id
+//@access Private: Needs Login
+router.post(
+  "/get/from/to/:id/:emp_id",
+  validateToken,
+  [body("from", "Enter a valid from").notEmpty()],
+  [body("to", "Enter a valid to").notEmpty()],
+  getAttendaceFromTo
+);
+
+//@desc Test Attendance API
+//@route GET /api/v1/attendance/get/employee/:attendance_id/:emp_id
+//@access Private: Needs Login
+router.get(
+  "/get/employee/:attendance_id/:emp_id",
+  validateToken,
+
+  getEmployeeAttendance
 );
 
 //@desc Test Attendance API
