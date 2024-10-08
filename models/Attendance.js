@@ -26,10 +26,21 @@ const AttendanceSchema = new Schema({
     ref: "User",
     required: true,
   },
-  AttendanceData: [AttendanceDataSchema],
-
   month_year: {
     type: Date,
+    required: true,
+  },
+  emp_id: {
+    type: Schema.Types.ObjectId,
+    ref: "Employee",
+    required: true,
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  present: {
+    type: Number,
     required: true,
   },
 

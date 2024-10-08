@@ -4,6 +4,7 @@ const { body } = require("express-validator");
 const {
   testAttendanceAPI,
   addAttendance,
+  addAttendance2,
   getAllAttendanceByClient,
   getAttendanceById,
   getLatestAttendance,
@@ -11,6 +12,7 @@ const {
   addRecordInAttendanceData,
   getEmployeeAttendance,
   getAttendaceFromTo,
+  getAttendaceFromTo2,
 } = require("../controllers/attendance");
 const validateToken = require("../middleware/validateTokenHandler");
 
@@ -28,7 +30,7 @@ router.post(
   [body("month_year", "Enter a valid month_year").notEmpty()],
   [body("employeeData", "Enter a valid employeeData").notEmpty()],
 
-  addAttendance
+  addAttendance2
 );
 
 //@desc Test Attendance API
@@ -42,10 +44,10 @@ router.get(
 );
 
 //@desc Test Attendance API
-//@route GET /api/v1/attendance/get/:id
+//@route GET /api/v1/attendance/get/:client_user_id/:month_year
 //@access Private: Needs Login
 router.get(
-  "/get/:id",
+  "/get/:client_user_id/:month_year",
   validateToken,
 
   getAttendanceById
@@ -59,14 +61,14 @@ router.post(
   validateToken,
   [body("from", "Enter a valid from").notEmpty()],
   [body("to", "Enter a valid to").notEmpty()],
-  getAttendaceFromTo
+  getAttendaceFromTo2
 );
 
 //@desc Test Attendance API
-//@route GET /api/v1/attendance/get/employee/:attendance_id/:emp_id
+//@route GET /api/v1/attendance/get/employee/:attendance_id
 //@access Private: Needs Login
-router.get(
-  "/get/employee/:attendance_id/:emp_id",
+router.post(
+  "/get/employee/:attendance_id",
   validateToken,
 
   getEmployeeAttendance

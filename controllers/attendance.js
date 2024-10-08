@@ -91,6 +91,74 @@ const addAttendance = async (req, res) => {
   }
 };
 
+//@desc Create New Attendance
+//@route POST /api/v1/attendance/add/:id
+//@access Private: Needs Login
+const addAttendance2 = async (req, res) => {
+  const errors = validationResult(req);
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const user = req.user;
+  const data = matchedData(req); // Contains the validated input data
+  const employeeData = data.employeeData;
+
+  console.log("Received data:", data);
+  console.log("req.params.id:", req.params.id);
+
+  // If validation errors exist, respond with 400
+  if (!errors.isEmpty()) {
+    logger.error(
+      `${ip}: API /api/v1/attendance/add/:id responded with validation errors`
+    );
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  if (user) {
+    let attendanceRecords = [];
+    let errorList = [];
+
+    // Iterate through each employee and save attendance
+    for (let i = 0; i < employeeData.length; i++) {
+      try {
+        const attendance = await Attendance.create({
+          client_user_id: req.params.id,
+          month_year: data.month_year,
+          emp_id: employeeData[i].emp_id,
+          name: employeeData[i].name,
+          present: employeeData[i].present,
+        });
+
+        logger.info(
+          `${ip}: API /api/v1/attendance/add/:id | User: ${user.name} | Attendance added successfully`
+        );
+        attendanceRecords.push(attendance);
+      } catch (err) {
+        logger.error(
+          `${ip}: API /api/v1/attendance/add/:id | User: ${user.name} | Error: ${err.message}`
+        );
+        errorList.push({ employee: employeeData[i].name, error: err.message });
+      }
+    }
+
+    if (errorList.length > 0) {
+      return res.status(207).json({
+        message: "Some entries failed",
+        data: attendanceRecords,
+        errors: errorList,
+      });
+    } else {
+      return res.status(201).json({
+        message: "All attendance entries added successfully",
+        data: attendanceRecords,
+      });
+    }
+  } else {
+    logger.error(
+      `${ip}: API /api/v1/attendance/add/:id | Unauthorized user attempt`
+    );
+    return res.status(401).send({ message: "User is not authorized" });
+  }
+};
+
 //@desc Get All Attendance by client_user_id
 //@route GET /api/v1/attendance/get/all/:client_user_id
 //@access Private: Needs Login
@@ -121,20 +189,24 @@ const getAllAttendanceByClient = async (req, res) => {
     return res.status(401).send({ message: "User is not Autherized" });
   }
 };
+
 //@desc Get Attendance by  month_year
-//@route GET /api/v1/attendance/get/:id
+//@route GET /api/v1/attendance/get/:client_user_id/:month_year
 //@access Private: Needs Login
 const getAttendanceById = async (req, res) => {
   const data = matchedData(req);
-  console.log("data", data);
-  const id = req.params.id;
-  const month_year = data.month_year;
+
+  const client_user_id = req.params.client_user_id;
+
+  const month_year = req.params.month_year;
+
   const user = req.user;
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
 
   if (user) {
-    const attendance = await Attendance.findOne({
-      _id: id,
+    const attendance = await Attendance.find({
+      client_user_id: client_user_id,
+      month_year: month_year,
     });
     if (attendance) {
       logger.info(
@@ -259,10 +331,11 @@ const editAttendanceData = async (req, res) => {
 };
 
 //@desc Get AttendanceData by attendanceId and empId
-//@route GET /api/v1/attendance/get/employee/:attendance_id/:emp_id
+//@route GET /api/v1/attendance/get/employee/:attendance_id
 //@access Private: Needs Login
 const getEmployeeAttendance = async (req, res) => {
-  const { attendance_id, emp_id } = req.params;
+  const { attendance_id } = req.params;
+  console.log("attendance_id", attendance_id);
   const user = req.user;
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
 
@@ -273,36 +346,25 @@ const getEmployeeAttendance = async (req, res) => {
       });
 
       if (attendance) {
-        const attendanceDataItem = attendance.AttendanceData.find(
-          (item) => item.emp_id == emp_id
+        logger.info(
+          `${ip}: API /api/v1/attendance/get/employee/:attendance_id | User: ${user.name} | responded with Success`
         );
-
-        if (attendanceDataItem) {
-          logger.info(
-            `${ip}: API /api/v1/attendance/get/employee/:attendance_id/:emp_id | User: ${user.name} | responded with Success`
-          );
-          return res.status(200).json(attendanceDataItem);
-        } else {
-          logger.error(
-            `${ip}: API /api/v1/attendance/get/employee/:attendance_id/:emp_id | User: ${user.name} | responded with Employee Not Found`
-          );
-          return res.status(404).json({ message: "Employee Not Found" });
-        }
+        return res.status(200).json(attendance);
       } else {
         logger.error(
-          `${ip}: API /api/v1/attendance/get/employee/:attendance_id/:emp_id | User: ${user.name} | responded with Attendance Not Found`
+          `${ip}: API /api/v1/attendance/get/employee/:attendance_id | User: ${user.name} | responded with Attendance Not Found`
         );
         return res.status(404).json({ message: "Attendance Not Found" });
       }
     } catch (err) {
       logger.error(
-        `${ip}: API /api/v1/attendance/get/employee/:attendance_id/:emp_id | User: ${user.name} | responded with Error: ${err.message}`
+        `${ip}: API /api/v1/attendance/get/employee/:attendance_id | User: ${user.name} | responded with Error: ${err.message}`
       );
       return res.status(500).json({ error: "Error", message: err.message });
     }
   } else {
     logger.error(
-      `${ip}: API /api/v1/attendance/get/employee/:attendance_id/:emp_id | User: ${user.name} | responded with User is not Authorized`
+      `${ip}: API /api/v1/attendance/get/employee/:attendance_id | User: ${user.name} | responded with User is not Authorized`
     );
     return res.status(401).send({ message: "User is not Authorized" });
   }
@@ -336,6 +398,53 @@ const getAttendaceFromTo = async (req, res) => {
           "AttendanceData.$": 1, // Only return the matched element in AttendanceData array
         }
       ).sort({ month_year: 1 });
+
+      if (attendance && attendance.length > 0) {
+        logger.info(
+          `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with Success`
+        );
+        return res.status(200).json(attendance);
+      } else {
+        logger.error(
+          `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with Attendance Not Found`
+        );
+        return res.status(404).json({ message: "Attendance Not Found" });
+      }
+    } catch (err) {
+      logger.error(
+        `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with Error: ${err.message}`
+      );
+      return res.status(500).json({ error: "Error", message: err.message });
+    }
+  } else {
+    logger.error(
+      `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with User is not Authorized`
+    );
+    return res.status(401).send({ message: "User is not Authorized" });
+  }
+};
+
+//@desc Get AttendanceData by from month_year to to month_year and emp_id
+//@route GET /api/v1/attendance/get/from/to/:id/:emp_id
+//@access Private: Needs Login
+const getAttendaceFromTo2 = async (req, res) => {
+  const { id, emp_id } = req.params; // Extract id and emp_id from params
+  const data = matchedData(req); // Get the validated input data (from, to)
+  const user = req.user;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+  if (user) {
+    console.log("Client User ID: ", id);
+    console.log("Employee ID: ", emp_id);
+    console.log("Data: ", data);
+
+    try {
+      // Query the Attendance collection
+      const attendance = await Attendance.find({
+        client_user_id: id, // Match the client_user_id
+        month_year: { $gte: data.from, $lte: data.to }, // Filter by date range
+        emp_id: emp_id,
+      }).sort({ month_year: 1 });
 
       if (attendance && attendance.length > 0) {
         logger.info(
@@ -410,6 +519,7 @@ const addRecordInAttendanceData = async (req, res) => {
 module.exports = {
   testAttendanceAPI,
   addAttendance,
+  addAttendance2,
   getAttendanceById,
   getLatestAttendance,
   editAttendanceData,
@@ -417,4 +527,5 @@ module.exports = {
   getEmployeeAttendance,
   getAllAttendanceByClient,
   getAttendaceFromTo,
+  getAttendaceFromTo2,
 };
