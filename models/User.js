@@ -43,6 +43,11 @@ const UserSchema = new Schema({
     type: String,
     required: true,
   },
+  adhar_card: {
+    type: Number,
+    required: true,
+    unique: true,
+  },
   team: {
     type: "ObjectId",
     ref: Team,

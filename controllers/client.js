@@ -77,6 +77,7 @@ const createClient = async (req, res) => {
       password: data.password,
       whatsapp_no: data.whatsapp_no,
       city: data.city,
+      adhar_card: data.adhar_card,
       address: data.address,
       country: data.country,
       state: data.state,
@@ -116,9 +117,9 @@ const createClient = async (req, res) => {
 };
 
 //@desc Update Newly Created Client
-//@route POST /api/v1/client/update/created
+//@route POST /api/v1/client/update/created/client
 //@access Private: Needs Login
-const updateCreated = async (req, res) => {
+const updateCreatedClient = async (req, res) => {
   const errors = validationResult(req);
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   const user = req.user;
@@ -268,13 +269,49 @@ const AddClientDetails = async (req, res) => {
 //@desc Get all Clients
 //@route GET /api/v1/client/getall
 //@access Private: Needs Login
-const getClients = async (req, res) => {
+const getAllClients = async (req, res) => {
   const user = req.user;
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
 
   try {
+    if (user && user.roleType.name === "super_admin") {
+      const clients = await Client.find({
+        active: true,
+      }).populate("contact_person");
+
+      logger.info(
+        `${ip}: API /api/v1/client/getall | User: ${user.name} | responnded with Success `
+      );
+      return await res.status(200).json({
+        data: clients,
+        message: "User retrived successfully",
+      });
+    } else {
+      logger.error(
+        `${ip}: API /api/v1/client/getall | User: ${user.name} | responnded with Client is not Autherized `
+      );
+      return res.status(401).send({ message: "User is not Autherized" });
+    }
+  } catch (error) {
+    logger.error(
+      `${ip}: API /api/v1/client/getall | User: ${user.name} | responnded with Error `
+    );
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
+//@desc Get all Clients
+//@route GET /api/v1/client/get/:client_user_id
+//@access Private: Needs Login
+const getClients = async (req, res) => {
+  const user = req.user;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const { client_user_id } = req.params;
+
+  try {
     if (user) {
       const clients = await Client.find({
+        client_user_id: client_user_id,
         active: true,
       }).populate("contact_person");
 
@@ -317,6 +354,8 @@ const getClient = async (req, res) => {
           user_id: id,
         }).populate("contact_person");
       }
+
+      console.log("client", client);
 
       if (client.length > 0) {
         logger.info(
@@ -806,8 +845,9 @@ const updateDocument = async (req, res) => {
 module.exports = {
   testClientAPI,
   createClient,
-  updateCreated,
+  updateCreatedClient,
   AddClientDetails,
+  getAllClients,
   getClients,
   getClient,
   updateClient,

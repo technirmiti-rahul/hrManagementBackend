@@ -4,8 +4,9 @@ const { body } = require("express-validator");
 const {
   testClientAPI,
   createClient,
-  updateCreated,
+  updateCreatedClient,
   AddClientDetails,
+  getAllClients,
   getClients,
   getClient,
   updateClient,
@@ -34,6 +35,7 @@ router.post(
     body("email", "Enter a Valid Email").isEmail(),
     body("whatsapp_no", "Enter a Valid Whatsapp Number").notEmpty().isNumeric(),
     body("password", "Password must have atlest 5 character").notEmpty(),
+    body("adhar_card", "Enter a valid adhar_card").notEmpty(),
     body("city", "Enter a Valid city"),
     body("state", "Enter a Valid state"),
     body("country", "Enter a Valid country"),
@@ -47,10 +49,10 @@ router.post(
 );
 
 //@desc Update Newly Created Client
-//@route POST /api/v1/client/update/created
+//@route POST /api/v1/client/update/created/client
 //@access Private: Needs Login
 router.post(
-  "/update/created",
+  "/update/created/client",
   validateToken,
   [
     body("user_id", "Enter a valid user id").notEmpty(),
@@ -68,7 +70,7 @@ router.post(
     body("department", "Select a valid department id").notEmpty(),
   ],
 
-  updateCreated
+  updateCreatedClient
 );
 
 //@desc Login Client
@@ -111,7 +113,12 @@ router.get("/getCurrent/", validateToken, getCurrent);
 //@desc Get all Clients
 //@route GET /api/v1/client/getall
 //@access Private: Needs Login
-router.get("/getall", validateToken, getClients);
+router.get("/get/all/clients", validateToken, getAllClients);
+
+//@desc Get all Clients
+//@route GET /api/v1/client/getall
+//@access Private: Needs Login
+router.get("/get/clients/:client_user_id", validateToken, getClients);
 
 //@desc Get Client with id
 //@route GET /api/v1/client/get/:id

@@ -30,9 +30,8 @@ const AttendanceSchema = new Schema({
     type: Date,
     required: true,
   },
-  emp_id: {
-    type: Schema.Types.ObjectId,
-    ref: "Employee",
+  email: {
+    type: String,
     required: true,
   },
   name: {

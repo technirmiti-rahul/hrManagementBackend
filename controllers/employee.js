@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Client = require("../models/Client");
 const Employee = require("../models/Employee");
+const Role = require("../models/Role");
 const logger = require("../config/logger.js");
 
 const secret = process.env.ACCESS_TOKEN_SECERT;
@@ -57,7 +58,7 @@ const createEmployee = async (req, res) => {
   }
 
   try {
-    const existingUser = await Employee.findOne({ email: data.email });
+    const existingUser = await User.findOne({ adhar_card: data.adhar_card });
     if (existingUser) {
       logger.error(
         `${ip}: API /api/v1/employee/add | User: ${user.name} | Responded with Employee already registered! for email: ${data.email}`
@@ -65,7 +66,17 @@ const createEmployee = async (req, res) => {
       return res.status(409).json({ message: "User already registered!" });
     }
 
-    const existingEmployee = await Employee.findOne({ email: data.email });
+    var existingEmployee = await Employee.findOne({ email: data.email });
+    if (existingEmployee) {
+      logger.error(
+        `${ip}: API /api/v1/employee/add | User: ${user.name} | Responded with Employee already registered! for user: ${data.email}`
+      );
+      return res.status(409).json({ message: "Employee already registered!" });
+    }
+
+    var existingEmployee = await Employee.findOne({
+      adhar_card: data.adhar_card,
+    });
     if (existingEmployee) {
       logger.error(
         `${ip}: API /api/v1/employee/add | User: ${user.name} | Responded with Employee already registered! for user: ${data.email}`
@@ -77,12 +88,21 @@ const createEmployee = async (req, res) => {
       user_id: data.client_user_id,
     });
 
+    const salt = await bcrypt.genSalt(10);
+    let securedPass = "";
+    if (data.password) {
+      securedPass = await bcrypt.hash(data.password, salt);
+    } else {
+      securedPass = await bcrypt.hash("111111", salt);
+    }
+
     const newUser = await User.create({
       name: data.name,
       email: data.email,
-      password: data.password || "111111",
+      password: securedPass,
       whatsapp_no: data.whatsapp_no,
       city: data.city,
+      adhar_card: data.adhar_card,
       address: data.address,
       country: data.country,
       state: data.state,
@@ -96,17 +116,38 @@ const createEmployee = async (req, res) => {
       user_id: newUser._id,
       client_id: existingClient._id || data.client_id,
       client_user_id: data.client_user_id,
+
       name: data.name,
       email: data.email,
       whatsapp_no: data.whatsapp_no,
-      city: data.city,
       designation: data.designation,
 
       date_of_joining: data.date_of_joining,
       address: data.address,
+      city: data.city,
       country: data.country,
       state: data.state,
       pin_code: data.pin_code,
+
+      adhar_card: data.adhar_card,
+      uan_no: data.uan_no,
+      pf_no: data.pf_no,
+      esic_no: data.esic_no,
+      bank_name: data.bank_name,
+      bank_ac_no: data.bank_ac_no,
+      bank_ifsc: data.bank_ifsc,
+
+      pf_basic: data.pf_basic,
+      basic: data.basic,
+      da: data.da,
+      hra: data.hra,
+      food_allow: data.food_allow,
+      conveyance: data.conveyance,
+      epf: data.epf,
+      esic: data.esic,
+      lwf: data.lwf,
+      e_epf: data.e_epf,
+      e_esic: data.e_esic,
     });
 
     console.log("newEmployee", newEmployee);
@@ -129,7 +170,7 @@ const createEmployee = async (req, res) => {
 //@desc Create New Employee
 //@route POST /api/v1/employee/add
 //@access Private: Needs Login
-const createEmployeesFromExcel = async (req, res) => {
+const createEmployeesByExcel = async (req, res) => {
   const errors = validationResult(req);
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   const user = req.user;
@@ -152,30 +193,27 @@ const createEmployeesFromExcel = async (req, res) => {
     return res.status(401).send({ message: "User is not Autherized" });
   }
 
+  const role = await Role.findOne({ name: "employee" });
+
   let existingUsers = [];
   let newUsers = [];
   let Errors = [];
   for (let i in data.employeeData) {
-    const existingUser = await Employee.findOne({
-      email: data.employeeData[i].email,
+    const existingUser = await User.findOne({
+      adhar_card: data.employeeData[i].adhar_card,
     });
-    if (existingUser) {
+
+    const existingEmployee = await Employee.findOne({
+      adhar_card: data.employeeData[i].adhar_card,
+    });
+
+    if (existingUser || existingEmployee) {
       logger.error(
         `${ip}: API /api/v1/employee/add | User: ${user.name} | Responded with Employee already registered! for email: ${data.email}`
       );
       existingUsers.push(data.employeeData[i]);
     } else {
       try {
-        const existingEmployee = await Employee.findOne({ email: data.email });
-        if (existingEmployee) {
-          logger.error(
-            `${ip}: API /api/v1/employee/add | User: ${user.name} | Responded with Employee already registered! for user: ${data.email}`
-          );
-          return res
-            .status(409)
-            .json({ message: "Employee already registered!" });
-        }
-
         const existingClient = await Client.findOne({
           user_id: data.client_user_id,
         });
@@ -193,14 +231,15 @@ const createEmployeesFromExcel = async (req, res) => {
           email: data.employeeData[i].email,
           password: securedPass,
           whatsapp_no: data.employeeData[i].whatsapp_no,
+          adhar_card: data.employeeData[i].adhar_card,
           city: data.employeeData[i].city,
           address: data.employeeData[i].address,
           country: data.employeeData[i].country,
           state: data.employeeData[i].state,
           pin_code: data.employeeData[i].pin_code,
-          team: data.employeeData[i].team,
-          roleType: data.employeeData[i].roleType,
-          department: data.employeeData[i].department,
+          team: data.team,
+          roleType: role._id,
+          department: data.department,
         });
 
         const newEmployee = await Employee.create({
@@ -218,6 +257,25 @@ const createEmployeesFromExcel = async (req, res) => {
           country: data.employeeData[i].country,
           state: data.employeeData[i].state,
           pin_code: data.employeeData[i].pin_code,
+
+          adhar_card: data.employeeData[i].adhar_card,
+          uan_no: data.employeeData[i].uan_no || "",
+          pf_no: data.employeeData[i].pf_no || "",
+          esic_no: data.employeeData[i].esic_no || "",
+          bank_name: data.employeeData[i].bank_name || "",
+          bank_ac_no: data.employeeData[i].bank_ac_no || "",
+          bank_ifsc: data.employeeData[i].bank_ifsc || "",
+          pf_basic: data.employeeData[i].pf_basic || "",
+          basic: data.employeeData[i].basic || "",
+          da: data.employeeData[i].da || "",
+          hra: data.employeeData[i].hra || "",
+          food_allow: data.employeeData[i].food_allow || "",
+          conveyance: data.employeeData[i].conveyance || "",
+          epf: data.employeeData[i].epf || "",
+          esic: data.employeeData[i].esic || "",
+          lwf: data.employeeData[i].lwf || "",
+          e_epf: data.employeeData[i].e_epf || "",
+          e_esic: data.employeeData[i].e_esic || "",
         });
 
         console.log("newEmployee", newEmployee);
@@ -439,6 +497,39 @@ const getClientEmployees = async (req, res) => {
   }
 };
 
+//@desc Get all Employees
+//@route GET /api/v1/employee/getall
+//@access Private: Needs Login
+const getAllEmployees = async (req, res) => {
+  const user = req.user;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
+  try {
+    if (user && user.roleType.name === "super_admin") {
+      console.log("user: ", user);
+
+      const employees = await Employee.find({ active: true });
+
+      logger.info(
+        `${ip}: API /api/v1/employee/getall | User: ${user.name} | responnded with Success `
+      );
+      return res
+        .status(200)
+        .json({ data: employees, message: "employees retrived successfully" });
+    } else {
+      logger.error(
+        `${ip}: API /api/v1/employee/getall | User: ${user.name} | responnded with Client is not Autherized `
+      );
+      return res.status(401).send({ message: "User is not Autherized" });
+    }
+  } catch (error) {
+    logger.error(
+      `${ip}: API /api/v1/employee/getall | User: ${user.name} | responnded with Error `
+    );
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
 //@desc Get Employee with id
 //@route GET /api/v1/employee/get/:id
 //@access Private: Needs Login
@@ -489,6 +580,49 @@ const getEmployee = async (req, res) => {
   }
 };
 
+//@desc Get Employee by email
+//@route GET /api/v1/employee/get/by/email/:email
+//@access Private: Needs Login
+const getEmployeeByEmail = async (req, res) => {
+  const loggedin_user = req.user;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const { email } = req.params;
+
+  try {
+    if (loggedin_user) {
+      let employee = await Employee.findOne({
+        email,
+      });
+
+      if (employee) {
+        logger.info(
+          `${ip}: API /api/v1/employee/getbyemail/:${email} | User: ${loggedin_user.name} | responnded with Success `
+        );
+        return await res.status(200).json({
+          data: employee,
+          message: "Employee retrived successfully",
+        });
+      } else {
+        logger.info(
+          `${ip}: API /api/v1/employee/getbyemail/:${email} | User: ${loggedin_user.name} | responnded Empty i.e. Employee was not found `
+        );
+        return await res.status(200).json({
+          message: "Employee Not Found",
+        });
+      }
+    } else {
+      logger.error(
+        `${ip}: API /api/v1/employee/getbyemail/:${email} | User: ${loggedin_user.name} | responnded with Employee is not Autherized `
+      );
+      return res.status(401).send({ message: "User is not Autherized" });
+    }
+  } catch (error) {
+    logger.error(
+      `${ip}: API /api/v1/employee/getbyemail/:email | User: ${loggedin_user.name} | responnded with Error `
+    );
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+};
 //@desc Update Employee with id
 //@route PUT /api/v1/employee/update/:user_id
 //@access Private: Needs Login
@@ -520,11 +654,29 @@ const updateEmployee = async (req, res) => {
             whatsapp_no: data.whatsapp_no,
             city: data.city,
             designation: data.designation,
-
             address: data.address,
             country: data.country,
             state: data.state,
             pin_code: data.pin_code,
+
+            uan_no: data.uan_no,
+            pf_no: data.pf_no,
+            esic_no: data.esic_no,
+            bank_name: data.bank_name,
+            bank_ac_no: data.bank_ac_no,
+            bank_ifsc: data.bank_ifsc,
+            pf_basic: data.pf_basic,
+            basic: data.basic,
+            da: data.da,
+            hra: data.hra,
+            food_allow: data.food_allow,
+            conveyance: data.conveyance,
+            epf: data.epf,
+            esic: data.esic,
+            lwf: data.lwf,
+            e_epf: data.e_epf,
+            e_esic: data.e_esic,
+
             updated_at: Date.now(),
           },
           {
@@ -907,10 +1059,13 @@ const updateDocument = async (req, res) => {
 module.exports = {
   testEmployeeAPI,
   createEmployee,
-  createEmployeesFromExcel,
+  createEmployeesByExcel,
 
+  getAllEmployees,
   getClientEmployees,
+  getEmployeeByEmail,
   getEmployee,
+
   updateEmployee,
   deleteEmployee,
 

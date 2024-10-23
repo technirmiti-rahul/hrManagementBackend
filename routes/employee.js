@@ -4,11 +4,14 @@ const { body } = require("express-validator");
 const {
   testEmployeeAPI,
   createEmployee,
-  createEmployeesFromExcel,
+  createEmployeesByExcel,
   updateEmployee,
   deleteEmployee,
+  getAllEmployees,
   getClientEmployees,
+
   getEmployee,
+  getEmployeeByEmail,
 
   AppDisEmployee,
   updateDocument,
@@ -44,6 +47,26 @@ router.post(
     body("department", "Select a valid department id").notEmpty(),
     body("designation", "Enter a Valid designation").notEmpty(),
     body("date_of_joining", "Enter a Valid date_of_joining").isDate(),
+
+    body("adhar_card", "Enter a Valid adhar_card"),
+    body("uan_no", "Enter a Valid uan_no"),
+    body("pf_no", "Enter a Valid pf_no"),
+    body("esic_no", "Enter a Valid esic_no"),
+    body("esic_no", "Enter a Valid esic_no"),
+    body("bank_name", "Enter a Valid bank_name"),
+    body("bank_ac_no", "Enter a Valid bank_ac_no"),
+    body("bank_ifsc", "Enter a Valid bank_ifsc"),
+    body("pf_basic", "Enter a Valid pf_basic"),
+    body("basic", "Enter a Valid basic"),
+    body("da", "Enter a Valid da"),
+    body("hra", "Enter a Valid hra"),
+    body("food_allow", "Enter a Valid food_allow"),
+    body("conveyance", "Enter a Valid conveyance"),
+    body("epf", "Enter a Valid epf"),
+    body("esic", "Enter a Valid esic"),
+    body("lwf", "Enter a Valid lwf"),
+    body("e_epf", "Enter a Valid e_epf"),
+    body("e_esic", "Enter a Valid e_esic"),
   ],
   validateToken,
   createEmployee
@@ -58,10 +81,12 @@ router.post(
   [
     body("client_user_id", "Enter a valid client user id").notEmpty(),
     body("client_id"),
+    body("team", "team required"),
+    body("department", "department required"),
     body("employeeData", "Enter a valid employeeData"),
   ],
   validateToken,
-  createEmployeesFromExcel
+  createEmployeesByExcel
 );
 
 //@desc Update Employee
@@ -80,20 +105,54 @@ router.put(
     body("address", "Enter a Valid address"),
     body("pin_code", "Enter a Valid pin_code").isNumeric(),
     body("designation", "Enter a Valid designation").notEmpty(),
+
+    body("adhar_card", "Enter a Valid adhar_card"),
+    body("uan_no", "Enter a Valid uan_no"),
+    body("pf_no", "Enter a Valid pf_no"),
+    body("esic_no", "Enter a Valid esic_no"),
+    body("esic_no", "Enter a Valid esic_no"),
+    body("bank_name", "Enter a Valid bank_name"),
+    body("bank_ac_no", "Enter a Valid bank_ac_no"),
+    body("bank_ifsc", "Enter a Valid bank_ifsc"),
+    body("pf_basic", "Enter a Valid pf_basic"),
+    body("basic", "Enter a Valid basic"),
+    body("da", "Enter a Valid da"),
+    body("hra", "Enter a Valid hra"),
+    body("food_allow", "Enter a Valid food_allow"),
+    body("conveyance", "Enter a Valid conveyance"),
+    body("epf", "Enter a Valid epf"),
+    body("esic", "Enter a Valid esic"),
+    body("lwf", "Enter a Valid lwf"),
+    body("e_epf", "Enter a Valid e_epf"),
+    body("e_esic", "Enter a Valid e_esic"),
   ],
   validateToken,
   updateEmployee
 );
 
 //@desc Get all Employees
+//@route GET /api/v1/employee/getall
+//@access Private: Needs Login
+router.get("/getall", validateToken, getAllEmployees);
+
+//@desc Get all Employees
 //@route GET /api/v1/employee/client_id
 //@access Private: Needs Login
-router.get("/get/employees/:client_id", validateToken, getClientEmployees);
+router.get(
+  "/get/employees/by/client/:client_id",
+  validateToken,
+  getClientEmployees
+);
 
 //@desc Get Employee with id
 //@route GET /api/v1/employee/get/:id
 //@access Private: Needs Login
 router.get("/get/:id", validateToken, getEmployee);
+
+//@desc Get Employee by email
+//@route GET /api/v1/employee/get/by/email/:email
+//@access Private: Needs Login
+router.get("/get/by/email/:email", validateToken, getEmployeeByEmail);
 
 //@desc Delete Employee
 //@route DELETE /api/v1/employee/delete/:id

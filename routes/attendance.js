@@ -3,15 +3,17 @@ const router = express.Router();
 const { body } = require("express-validator");
 const {
   testAttendanceAPI,
+
   addAttendance,
-  addAttendance2,
+  addSingleAttendance,
+
   getAllAttendanceByClient,
   getAttendanceById,
   getLatestAttendance,
   editAttendanceData,
   addRecordInAttendanceData,
   getEmployeeAttendance,
-  getAttendaceFromTo,
+
   getAttendaceFromTo2,
 } = require("../controllers/attendance");
 const validateToken = require("../middleware/validateTokenHandler");
@@ -30,7 +32,22 @@ router.post(
   [body("month_year", "Enter a valid month_year").notEmpty()],
   [body("employeeData", "Enter a valid employeeData").notEmpty()],
 
-  addAttendance2
+  addAttendance
+);
+
+//@desc Create New Attendance
+//@route POST /api/v1/attendance/add/single/:client_user_id
+//@access Private: Needs Login
+router.post(
+  "/add/single/:client_user_id",
+  validateToken,
+
+  [body("month_year", "Enter a valid month_year").notEmpty()],
+  [body("name", "Enter a valid name").notEmpty()],
+  [body("email", "Enter a valid email").notEmpty()],
+  [body("present", "Enter a valid present").notEmpty()],
+
+  addSingleAttendance
 );
 
 //@desc Test Attendance API
@@ -54,10 +71,10 @@ router.get(
 );
 
 //@desc Get AttendanceData by from month_year to to month_year
-//@route GET /api/v1/attendance/get/from/to/:id
+//@route GET /api/v1/attendance/get/from/to/:email
 //@access Private: Needs Login
 router.post(
-  "/get/from/to/:id/:emp_id",
+  "/get/from/to/:id/:email",
   validateToken,
   [body("from", "Enter a valid from").notEmpty()],
   [body("to", "Enter a valid to").notEmpty()],
@@ -88,7 +105,7 @@ router.get(
 //@route PUT /api/v1/attendance/edit/:id/:attendance_id
 //@access Private: Needs Login
 router.put(
-  "/edit/:id/:attendance_id",
+  "/edit/:attendance_id",
   validateToken,
   [body("name", "Enter a valid name").notEmpty()],
   [body("present", "Enter a valid present").notEmpty()],

@@ -31,73 +31,6 @@ const addAttendance = async (req, res) => {
   const errors = validationResult(req);
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   const user = req.user;
-  const data = matchedData(req);
-  console.log("data", data);
-
-  if (!errors.isEmpty()) {
-    logger.error(
-      `${ip}: API /api/v1/attendance/add/:id responnded with Error `
-    );
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  if (user) {
-    const oldAttendance = await Attendance.findOne({
-      client_user_id: req.params.id,
-      month_year: data.month_year,
-    });
-    if (oldAttendance) {
-      console.log("oldAttendance", oldAttendance);
-      oldAttendance.AttendanceData = data.employeeData;
-      oldAttendance.month_year = data.month_year;
-      await Attendance.findOneAndUpdate(
-        {
-          client_user_id: req.params.id,
-          month_year: data.month_year,
-        },
-        {
-          AttendanceData: data.employeeData,
-        },
-        { new: true }
-      );
-      logger.info(
-        `${ip}: API /api/v1/attendance/add/:id | User: ${user.name} | responnded with Success `
-      );
-      return res.status(201).json(oldAttendance);
-    }
-
-    await Attendance.create({
-      client_user_id: req.params.id,
-      AttendanceData: data.employeeData,
-      month_year: data.month_year,
-    })
-      .then((attendance) => {
-        logger.info(
-          `${ip}: API /api/v1/attendance/add/:id | User: ${user.name} | responnded with Success `
-        );
-        return res.status(201).json(attendance);
-      })
-      .catch((err) => {
-        logger.error(
-          `${ip}: API /api/v1/attendance/add/:id | User: ${user.name} | responnded with Error `
-        );
-        return res.status(500).json({ error: "Error", message: err.message });
-      });
-  } else {
-    logger.error(
-      `${ip}: API /api/v1/attendance/add/:id | User: ${user.name} | responnded with User is not Autherized `
-    );
-    return res.status(401).send({ message: "User is not Autherized" });
-  }
-};
-
-//@desc Create New Attendance
-//@route POST /api/v1/attendance/add/:id
-//@access Private: Needs Login
-const addAttendance2 = async (req, res) => {
-  const errors = validationResult(req);
-  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-  const user = req.user;
   const data = matchedData(req); // Contains the validated input data
   const employeeData = data.employeeData;
 
@@ -122,7 +55,7 @@ const addAttendance2 = async (req, res) => {
         const attendance = await Attendance.create({
           client_user_id: req.params.id,
           month_year: data.month_year,
-          emp_id: employeeData[i].emp_id,
+          email: employeeData[i].email,
           name: employeeData[i].name,
           present: employeeData[i].present,
         });
@@ -149,6 +82,59 @@ const addAttendance2 = async (req, res) => {
       return res.status(201).json({
         message: "All attendance entries added successfully",
         data: attendanceRecords,
+      });
+    }
+  } else {
+    logger.error(
+      `${ip}: API /api/v1/attendance/add/:id | Unauthorized user attempt`
+    );
+    return res.status(401).send({ message: "User is not authorized" });
+  }
+};
+
+//@desc Create New Attendance
+//@route POST /api/v1/attendance/add/single/:client_user_id"
+//@access Private: Needs Login
+const addSingleAttendance = async (req, res) => {
+  const errors = validationResult(req);
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const user = req.user;
+  const data = matchedData(req); // Contains the validated input data
+
+  console.log("Received data:", data);
+  console.log("req.params.id:", req.params.id);
+
+  // If validation errors exist, respond with 400
+  if (!errors.isEmpty()) {
+    logger.error(
+      `${ip}: API /api/v1/attendance/add/:id responded with validation errors`
+    );
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  if (user) {
+    try {
+      const attendance = await Attendance.create({
+        client_user_id: req.params.client_user_id,
+        month_year: data.month_year,
+        email: data.email,
+        name: data.name,
+        present: data.present,
+      });
+
+      logger.info(
+        `${ip}: API /api/v1/attendance/add/:id | User: ${user.name} | Attendance added successfully`
+      );
+      return res.status(201).json({
+        message: "Attendance added successfully",
+        data: attendance,
+      });
+    } catch (err) {
+      logger.error(
+        `${ip}: API /api/v1/attendance/add/:id | User: ${user.name} | Error: ${err.message}`
+      );
+      return res.status(400).json({
+        errors: [{ employee: data.name, error: err.message }],
       });
     }
   } else {
@@ -267,49 +253,32 @@ const getLatestAttendance = async (req, res) => {
 };
 
 //@desc Edit AttendanceData by emp_id
-//@route PUT /api/v1/attendance/edit/:id/:attendance_id
+//@route PUT /api/v1/attendance/edit/attendance_id
 //@access Private: Needs Login
 const editAttendanceData = async (req, res) => {
   const data = matchedData(req); // Extract validated and sanitized data
-  const { id, attendance_id } = req.params; // Extract params from request
+  const { attendance_id } = req.params; // Extract params from request
   const user = req.user;
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
 
   if (user) {
     try {
       // Find the attendance document by its main _id
-      const attendance = await Attendance.findOne({
-        _id: id,
-      });
+      const attendance = await Attendance.findOneAndUpdate(
+        {
+          _id: attendance_id,
+        },
+        {
+          name: data.name,
+          present: data.present,
+        }
+      );
 
       if (attendance) {
-        // Find the index of the specific AttendanceData item by attendance_id
-        const attendanceDataIndex = attendance.AttendanceData.findIndex(
-          (item) => item._id == attendance_id
+        logger.info(
+          `${ip}: API /api/v1/attendance/edit/:id | User: ${user.name} | responded with Success`
         );
-
-        // If the item exists in the array, proceed with the update
-        if (attendanceDataIndex >= 0) {
-          const attendanceDataItem =
-            attendance.AttendanceData[attendanceDataIndex];
-
-          // Only update the provided fields
-          if (data.name) attendanceDataItem.name = data.name;
-          if (data.present) attendanceDataItem.present = data.present;
-
-          // Save the updated document back to the database
-          await attendance.save();
-
-          logger.info(
-            `${ip}: API /api/v1/attendance/edit/:id | User: ${user.name} | responded with Success`
-          );
-          return res.status(200).json(attendance);
-        } else {
-          logger.error(
-            `${ip}: API /api/v1/attendance/edit/:id | User: ${user.name} | responded with Attendance Not Found`
-          );
-          return res.status(404).json({ message: "Attendance Not Found" });
-        }
+        return res.status(200).json(attendance);
       } else {
         logger.error(
           `${ip}: API /api/v1/attendance/edit/:id | User: ${user.name} | responded with Attendance Not Found`
@@ -424,48 +393,46 @@ const getAttendaceFromTo = async (req, res) => {
   }
 };
 
-//@desc Get AttendanceData by from month_year to to month_year and emp_id
-//@route GET /api/v1/attendance/get/from/to/:id/:emp_id
+//@desc Get AttendanceData by from month_year to to month_year
+//@route GET /api/v1/attendance/get/from/to/::id/:email
 //@access Private: Needs Login
 const getAttendaceFromTo2 = async (req, res) => {
-  const { id, emp_id } = req.params; // Extract id and emp_id from params
+  const { email } = req.params; // Extract email from params
   const data = matchedData(req); // Get the validated input data (from, to)
   const user = req.user;
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
 
   if (user) {
-    console.log("Client User ID: ", id);
-    console.log("Employee ID: ", emp_id);
+    console.log("Client Email: ", email);
     console.log("Data: ", data);
 
     try {
-      // Query the Attendance collection
+      // Query the Attendance collection by email
       const attendance = await Attendance.find({
-        client_user_id: id, // Match the client_user_id
+        email: email, // Match the email
         month_year: { $gte: data.from, $lte: data.to }, // Filter by date range
-        emp_id: emp_id,
       }).sort({ month_year: 1 });
 
       if (attendance && attendance.length > 0) {
         logger.info(
-          `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with Success`
+          `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:email | User: ${user.name} | responded with Success`
         );
         return res.status(200).json(attendance);
       } else {
         logger.error(
-          `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with Attendance Not Found`
+          `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:email | User: ${user.name} | responded with Attendance Not Found`
         );
         return res.status(404).json({ message: "Attendance Not Found" });
       }
     } catch (err) {
       logger.error(
-        `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with Error: ${err.message}`
+        `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:email | User: ${user.name} | responded with Error: ${err.message}`
       );
       return res.status(500).json({ error: "Error", message: err.message });
     }
   } else {
     logger.error(
-      `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:id/:emp_id | User: ${user.name} | responded with User is not Authorized`
+      `${ip}: API /api/v1/attendance/get/from/:from/to/:to/:email | User: ${user.name} | responded with User is not Authorized`
     );
     return res.status(401).send({ message: "User is not Authorized" });
   }
@@ -519,13 +486,14 @@ const addRecordInAttendanceData = async (req, res) => {
 module.exports = {
   testAttendanceAPI,
   addAttendance,
-  addAttendance2,
+  addSingleAttendance,
+
   getAttendanceById,
   getLatestAttendance,
   editAttendanceData,
   addRecordInAttendanceData,
   getEmployeeAttendance,
   getAllAttendanceByClient,
-  getAttendaceFromTo,
+
   getAttendaceFromTo2,
 };
