@@ -58,6 +58,10 @@ const addAttendance = async (req, res) => {
           email: employeeData[i].email,
           name: employeeData[i].name,
           present: employeeData[i].present,
+          totalWorkingDays: data.totalWorkingDays,
+          month: data.month,
+          year: data.year,
+          remark: data.remark || "NA",
         });
 
         logger.info(
@@ -102,7 +106,7 @@ const addSingleAttendance = async (req, res) => {
   const data = matchedData(req); // Contains the validated input data
 
   console.log("Received data:", data);
-  console.log("req.params.id:", req.params.id);
+  console.log("req.params.id:", req.params.client_user_id);
 
   // If validation errors exist, respond with 400
   if (!errors.isEmpty()) {
@@ -120,6 +124,11 @@ const addSingleAttendance = async (req, res) => {
         email: data.email,
         name: data.name,
         present: data.present,
+        totalWorkingDays: data.totalWorkingDays,
+        month: data.month,
+        year: data.year,
+        gross: data.gross,
+        remark: data.remark || "NA",
       });
 
       logger.info(
@@ -271,6 +280,7 @@ const editAttendanceData = async (req, res) => {
         {
           name: data.name,
           present: data.present,
+          remark: data.remark,
         }
       );
 

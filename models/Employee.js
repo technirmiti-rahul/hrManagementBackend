@@ -18,9 +18,21 @@ const EmployeeSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Client",
   },
+
+  emp_no: {
+    type: String,
+    required: true,
+  },
+  last_emp_no: {
+    type: Number,
+    required: true,
+  },
   name: {
     type: String,
     required: true,
+  },
+  fatherHusband_name: {
+    type: String,
   },
   email: {
     type: String,
@@ -65,6 +77,9 @@ const EmployeeSchema = new Schema({
     required: true,
     unique: true,
   },
+  gross: {
+    type: Number,
+  },
   uan_no: {
     type: Number,
   },
@@ -108,13 +123,46 @@ const EmployeeSchema = new Schema({
     type: Number,
   },
   lwf: {
-    type: Number,
+    type: Boolean,
   },
   e_epf: {
     type: Number,
   },
   e_esic: {
     type: Number,
+  },
+
+  adhar_proof: {
+    type: Boolean,
+    default: false,
+  },
+  adhar_proof_url: {
+    type: String,
+  },
+  adhar_proof_url_id: {
+    type: String,
+  },
+
+  asci_proof: {
+    type: Boolean,
+    default: false,
+  },
+  asci_proof_url: {
+    type: String,
+  },
+  asci_proof_url_id: {
+    type: String,
+  },
+
+  bank_proof: {
+    type: Boolean,
+    default: false,
+  },
+  bank_proof_url: {
+    type: String,
+  },
+  bank_proof_url_id: {
+    type: String,
   },
 
   createDate: {

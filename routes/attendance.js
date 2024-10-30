@@ -31,6 +31,10 @@ router.post(
   validateToken,
   [body("month_year", "Enter a valid month_year").notEmpty()],
   [body("employeeData", "Enter a valid employeeData").notEmpty()],
+  [body("totalWorkingDays", "Enter a valid totalWorkingDays").notEmpty()],
+  [body("month", "Enter a valid month").notEmpty()],
+  [body("year", "Enter a valid year").notEmpty()],
+  [body("remark")],
 
   addAttendance
 );
@@ -46,6 +50,11 @@ router.post(
   [body("name", "Enter a valid name").notEmpty()],
   [body("email", "Enter a valid email").notEmpty()],
   [body("present", "Enter a valid present").notEmpty()],
+  [body("totalWorkingDays", "Enter a valid totalWorkingDays").notEmpty()],
+  [body("month", "Enter a valid month").notEmpty()],
+  [body("year", "Enter a valid year").notEmpty()],
+  [body("gross", "Enter a valid gross").notEmpty()],
+  [body("remark")],
 
   addSingleAttendance
 );
@@ -109,6 +118,7 @@ router.put(
   validateToken,
   [body("name", "Enter a valid name").notEmpty()],
   [body("present", "Enter a valid present").notEmpty()],
+  [body("remark")],
   editAttendanceData
 );
 

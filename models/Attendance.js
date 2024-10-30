@@ -4,32 +4,38 @@ const User = require("./User.js");
 
 const { Schema } = mongoose;
 
-const AttendanceDataSchema = new Schema({
-  emp_id: {
-    type: Schema.Types.ObjectId,
-    ref: "Employee",
-    required: true,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  present: {
-    type: Number,
-    required: true,
-  },
-});
-
 const AttendanceSchema = new Schema({
   client_user_id: {
     type: Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
+  /* emp_no: {
+    type: String,
+    required: true,
+  }, */
+  gross: {
+    type: Number,
+    required: true,
+  },
+  lwf: {
+    type: Boolean,
+    default: false,
+  },
+
   month_year: {
     type: Date,
     required: true,
   },
+  month: {
+    type: String,
+    required: true,
+  },
+  year: {
+    type: String,
+    required: true,
+  },
+
   email: {
     type: String,
     required: true,
@@ -41,6 +47,15 @@ const AttendanceSchema = new Schema({
   present: {
     type: Number,
     required: true,
+  },
+  totalWorkingDays: {
+    type: Number,
+    required: true,
+  },
+
+  remark: {
+    type: String,
+    default: "NA",
   },
 
   createDate: {

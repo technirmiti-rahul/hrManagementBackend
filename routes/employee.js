@@ -34,6 +34,9 @@ router.post(
     body("client_user_id", "Enter a valid client user id").notEmpty(),
     body("client_id"),
     body("name", "Enter a valid name").isLength({ min: 3 }),
+    body("fatherHusband_name", "Enter a valid fatherHusband_name").isLength({
+      min: 3,
+    }),
     body("email", "Enter a Valid Email").isEmail(),
     body("whatsapp_no", "Enter a Valid Whatsapp Number").notEmpty().isNumeric(),
     body("password", "Password must have atlest 5 character").notEmpty(),
@@ -64,7 +67,7 @@ router.post(
     body("conveyance", "Enter a Valid conveyance"),
     body("epf", "Enter a Valid epf"),
     body("esic", "Enter a Valid esic"),
-    body("lwf", "Enter a Valid lwf"),
+    body("lwf"),
     body("e_epf", "Enter a Valid e_epf"),
     body("e_esic", "Enter a Valid e_esic"),
   ],
@@ -97,6 +100,9 @@ router.put(
 
   [
     body("name", "Enter a valid name").isLength({ min: 3 }),
+    body("fatherHusband_name", "Enter a valid fatherHusband_name").isLength({
+      min: 3,
+    }),
     body("email", "Enter a Valid Email").isEmail(),
     body("whatsapp_no", "Enter a Valid Whatsapp Number").notEmpty().isNumeric(),
     body("city", "Enter a Valid city"),
@@ -122,7 +128,7 @@ router.put(
     body("conveyance", "Enter a Valid conveyance"),
     body("epf", "Enter a Valid epf"),
     body("esic", "Enter a Valid esic"),
-    body("lwf", "Enter a Valid lwf"),
+    body("lwf"),
     body("e_epf", "Enter a Valid e_epf"),
     body("e_esic", "Enter a Valid e_esic"),
   ],
@@ -167,7 +173,16 @@ router.put("/app_dis/:id", validateToken, AppDisEmployee);
 //@desc Update Employee Document
 //@route PUT /api/v1/employee/update/document/:id
 //@access Private: Needs Login
-router.put("/update/document/:id", validateToken, updateDocument);
+router.put(
+  "/update/document/:id",
+  [
+    body("document_type", "ducument_type is required").notEmpty(),
+    body("document_url", "document_url is required").notEmpty(),
+    body("document_url_id", "document_id is required").notEmpty(),
+  ],
+  validateToken,
+  updateDocument
+);
 
 //@desc Change Password
 //@route PUT /api/v1/employee/change/password/:id

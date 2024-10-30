@@ -11,6 +11,7 @@ const logger = require("../config/logger.js");
 
 const secret = process.env.ACCESS_TOKEN_SECERT;
 const defaultPassword = process.env.DEFAULT_PASSWORD;
+
 //@desc Test Employee API
 //@route GET /api/v1/employee
 //@access Private: Needs Login
@@ -88,6 +89,20 @@ const createEmployee = async (req, res) => {
       user_id: data.client_user_id,
     });
 
+    let lastCount = 0;
+
+    if (existingClient) {
+      const latestEmployee = await Employee.findOne({
+        client_user_id: data.client_user_id,
+      }).sort({ last_emp_no: -1 });
+
+      lastCount = latestEmployee ? latestEmployee.last_emp_no : 0;
+      console.log("lastCount", lastCount);
+      console.log("existingClient", existingClient.name.slice(0, 4));
+    }
+    let cunstructedEmpNo =
+      existingClient.name.slice(0, 4) + "_" + `${lastCount + 1}`;
+
     const salt = await bcrypt.genSalt(10);
     let securedPass = "";
     if (data.password) {
@@ -116,8 +131,11 @@ const createEmployee = async (req, res) => {
       user_id: newUser._id,
       client_id: existingClient._id || data.client_id,
       client_user_id: data.client_user_id,
+      emp_no: cunstructedEmpNo,
+      last_emp_no: lastCount + 1,
 
       name: data.name,
+      fatherHusband_name: data.fatherHusband_name,
       email: data.email,
       whatsapp_no: data.whatsapp_no,
       designation: data.designation,
@@ -145,7 +163,7 @@ const createEmployee = async (req, res) => {
       conveyance: data.conveyance,
       epf: data.epf,
       esic: data.esic,
-      lwf: data.lwf,
+      lwf: data.lwf || false,
       e_epf: data.e_epf,
       e_esic: data.e_esic,
     });
@@ -198,6 +216,22 @@ const createEmployeesByExcel = async (req, res) => {
   let existingUsers = [];
   let newUsers = [];
   let Errors = [];
+  let lastCount = 0;
+
+  const existingClient = await Client.findOne({
+    user_id: data.client_user_id,
+  });
+
+  if (existingClient) {
+    const latestEmployee = await Employee.findOne({
+      client_user_id: data.client_user_id,
+    }).sort({ last_emp_no: -1 });
+
+    lastCount = latestEmployee ? latestEmployee.last_emp_no : 0;
+    console.log("lastCount", lastCount);
+    console.log("existingClient", existingClient.name.slice(0, 4));
+  }
+
   for (let i in data.employeeData) {
     const existingUser = await User.findOne({
       adhar_card: data.employeeData[i].adhar_card,
@@ -225,6 +259,9 @@ const createEmployeesByExcel = async (req, res) => {
         } else {
           securedPass = await bcrypt.hash("111111", salt);
         }
+        let cunstructedEmpNo =
+          existingClient.name.slice(0, 4) + "_" + `${lastCount + 1}`;
+        lastCount = lastCount + 1;
 
         const newUser = await User.create({
           name: data.employeeData[i].name,
@@ -246,7 +283,11 @@ const createEmployeesByExcel = async (req, res) => {
           user_id: newUser._id,
           client_id: existingClient._id || data.client_id,
           client_user_id: data.client_user_id,
+          emp_no: cunstructedEmpNo,
+          last_emp_no: lastCount,
           name: data.employeeData[i].name,
+
+          fatherHusband_name: data.employeeData[i].fatherHusband_name || "",
           email: data.employeeData[i].email,
           whatsapp_no: data.employeeData[i].whatsapp_no,
           city: data.employeeData[i].city,
@@ -273,7 +314,7 @@ const createEmployeesByExcel = async (req, res) => {
           conveyance: data.employeeData[i].conveyance || "",
           epf: data.employeeData[i].epf || "",
           esic: data.employeeData[i].esic || "",
-          lwf: data.employeeData[i].lwf || "",
+          lwf: data.employeeData[i].lwf || false,
           e_epf: data.employeeData[i].e_epf || "",
           e_esic: data.employeeData[i].e_esic || "",
         });
@@ -651,6 +692,7 @@ const updateEmployee = async (req, res) => {
           { user_id: id },
           {
             name: data.name,
+            fatherHusband_name: data.fatherHusband_name,
             whatsapp_no: data.whatsapp_no,
             city: data.city,
             designation: data.designation,
@@ -942,7 +984,7 @@ const changePass = async (req, res) => {
 };
 
 //@desc Update Client with id
-//@route PUT /api/v1/client/update/document/:id
+//@route PUT /api/v1/employee/update/document/:id
 //@access Private: Needs Login
 const updateDocument = async (req, res) => {
   const loggedin_user = req.user;
@@ -963,13 +1005,13 @@ const updateDocument = async (req, res) => {
 
   if (loggedin_user) {
     try {
-      const oldUser = await Client.findOne({ user_id: id });
+      const oldUser = await Employee.findOne({ user_id: id });
       console.log("oldUser: ", oldUser);
       if (oldUser) {
         let client = "";
 
         if (data.document_type == "adhar") {
-          const res = await Client.findOneAndUpdate(
+          const res = await Employee.findOneAndUpdate(
             { user_id: id },
             {
               adhar_proof_url: data.document_url,
@@ -983,13 +1025,13 @@ const updateDocument = async (req, res) => {
           client = res;
         }
 
-        if (data.document_type == "pan") {
-          const res = await Client.findOneAndUpdate(
+        if (data.document_type == "asci") {
+          const res = await Employee.findOneAndUpdate(
             { user_id: id },
             {
-              pan_proof_url: data.document_url,
-              pan_proof: true,
-              pan_proof_url_id: data.document_url_id,
+              asci_proof_url: data.document_url,
+              asci_proof: true,
+              asci_proof_url_id: data.document_url_id,
             },
             {
               new: true,
@@ -998,28 +1040,13 @@ const updateDocument = async (req, res) => {
           client = res;
         }
 
-        if (data.document_type == "gst") {
-          const res = await Client.findOneAndUpdate(
+        if (data.document_type == "bank") {
+          const res = await Employee.findOneAndUpdate(
             { user_id: id },
             {
-              gst_proof_url: data.document_url,
-              gst_proof: true,
-              gst_proof_url_id: data.document_url_id,
-            },
-            {
-              new: true,
-            }
-          );
-          client = res;
-        }
-
-        if (data.document_type == "cin") {
-          const res = await Client.findOneAndUpdate(
-            { user_id: id },
-            {
-              cin_proof_url: data.document_url,
-              cin_proof: true,
-              cin_proof_url_id: data.document_url_id,
+              bank_proof_url: data.document_url,
+              bank_proof: true,
+              bank_proof_url_id: data.document_url_id,
             },
             {
               new: true,

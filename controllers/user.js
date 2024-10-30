@@ -61,7 +61,7 @@ const createUser = async (req, res) => {
       email: data.email,
       whatsapp_no: data.whatsapp_no,
       password: securedPass,
-      adhar_card:data.adhar_card,
+      adhar_card: data.adhar_card,
       roleType: data.roleType,
       team: data.team,
       department: data.department,
